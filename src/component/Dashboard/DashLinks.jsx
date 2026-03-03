@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import React from "react";
+import { CgProfile } from "react-icons/cg";
 import {
   LayoutDashboard,
   BadgeDollarSign,
@@ -23,6 +24,11 @@ export default function DashLinks() {
       name: "হোম পেজ",
       icon: <LayoutDashboard size={20} />,
       link: "/dashboard",
+    },
+    {
+      name: "প্রোফাইল",
+      icon: <CgProfile />,
+      link: "/dashboard/profile",
     },
     {
       name: "দৈনিক বিক্রয়",

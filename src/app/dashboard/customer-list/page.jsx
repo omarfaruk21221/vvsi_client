@@ -30,10 +30,6 @@ export default function CustomerList() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
   const fetchCustomers = async () => {
     try {
       const res = await axiosInstance.get("/customers");
@@ -42,6 +38,9 @@ export default function CustomerList() {
       console.error("ডাটা ফেচ করতে সমস্যা হয়েছে:", error);
     }
   };
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   // সার্চ এবং সর্টিং লজিক
   const filteredData = useMemo(() => {

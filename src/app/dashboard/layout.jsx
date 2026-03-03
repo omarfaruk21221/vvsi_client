@@ -1,5 +1,6 @@
 "use client";
 import DashLinks from "@/component/Dashboard/DashLinks";
+import UserMenu from "@/component/Dashboard/UserMenu";
 import MyLogo from "@/component/MyLogo";
 import React from "react";
 
@@ -31,8 +32,10 @@ const DashBoardLayout = ({ children }) => {
               <path d="M14 10l2 2l-2 2"></path>
             </svg>
           </label>
-          <div className="px-4">
+          {/* up navbar  */}
+          <div className=" w-full px-4 flex justify-between items-center">
             <MyLogo />
+            <UserMenu />
           </div>
         </nav>
         {/* Page content here */}
