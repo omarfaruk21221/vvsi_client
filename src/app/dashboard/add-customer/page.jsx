@@ -68,23 +68,98 @@ export default function AddCustomer() {
   };
 
   const onSubmit = async (data) => {
-    try {
+    // ১. ইমেজ আপলোড করার হেল্পার ফাংশন
+    const uploadToImgBB = async (file) => {
+      if (!file || !(file instanceof File)) return ""; // ফাইল না থাকলে খালি স্ট্রিং দেবে
+
       const formData = new FormData();
-      Object.keys(data).forEach((key) => formData.append(key, data[key]));
-      const res = await axiosInstance.post("/add_customers", formData);
+      formData.append("image", file);
+
+      try {
+        // আপনার .env.local ফাইলে NEXT_PUBLIC_IMGBB_API_KEY=3ac01831eeaad4edcbe2e6f25d124043 সেট করুন
+        const apiKey =
+          process.env.NEXT_PUBLIC_IMGBB_API_KEY ||
+          "3ac01831eeaad4edcbe2e6f25d124043";
+
+        const response = await fetch(
+          `https://api.imgbb.com/1/upload?key=${apiKey}`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        const result = await response.json();
+        if (result.success) {
+          return result.data.url; // ইমেজের সরাসরি অনলাইন লিঙ্ক
+        } else {
+          throw new Error("ImgBB upload failed");
+        }
+      } catch (error) {
+        console.error("Image Upload Error:", error);
+        return "";
+      }
+    };
+
+    try {
+      // লোডিং স্টেট দেখানো (SweetAlert2)
+      Swal.fire({
+        title: "অপেক্ষা করুন...",
+        text: "তথ্য ও ছবি আপলোড হচ্ছে",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      // ২. প্যারালালভাবে ৩টি ইমেজই আপলোড করা (সময় বাঁচানোর জন্য)
+      const [profileUrl, nidFrontUrl, nidBackUrl] = await Promise.all([
+        uploadToImgBB(data.customer_image),
+        uploadToImgBB(data.nid_front),
+        uploadToImgBB(data.nid_back),
+      ]);
+
+      // ৩. ব্যাকএন্ডের রিকোয়ারমেন্ট অনুযায়ী ডাটা অবজেক্ট তৈরি
+      const finalPayload = {
+        category: data.customer_category,
+        name: data.full_name,
+        fatherName: data.father_name,
+        motherName: data.mother_name,
+        mobile: data.mobile_phone,
+        dob: data.dob || "",
+        nidNumber: data.nid_number,
+        address: data.address,
+        image: profileUrl, // ImgBB Profile Link
+        nid_front: nidFrontUrl, // ImgBB NID Front Link
+        nid_back: nidBackUrl, // ImgBB NID Back Link
+        cust_id: Number(data.cust_id),
+      };
+
+      // ৪. আপনার এক্সপ্রেস ব্যাকএন্ডে JSON ডাটা পাঠানো
+      const res = await axiosInstance.post("/add_customers", finalPayload);
+
       if (res.data.success) {
         Swal.fire({
           icon: "success",
           title: "সফল!",
-          text: "গ্রাহক নিবন্ধিত হয়েছে",
+          text: "নতুন গ্রাহক সফলভাবে নিবন্ধিত হয়েছে।",
           confirmButtonColor: "var(--p)",
         });
+
+        // ফরম রিসেট এবং প্রিভিউ ক্লিয়ার করা
         reset();
         setPreviews({ profile: null, front: null, back: null });
-        fetchNewId();
+        fetchNewId(); // পরবর্তী আইডির জন্য
       }
     } catch (error) {
-      Swal.fire({ icon: "error", title: "ব্যর্থ", text: "আবার চেষ্টা করুন" });
+      console.error("Submission Error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "ব্যর্থ",
+        text:
+          error.response?.data?.message ||
+          "সার্ভারে ডাটা পাঠানো যায়নি। আবার চেষ্টা করুন।",
+      });
     }
   };
 
