@@ -6,41 +6,77 @@ import {
   Phone,
   ShieldCheck,
   Calendar,
-  LogOut,
   Camera,
+  EditIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import ProfileEditModal from "@/component/Modals/ProfileEditModal";
+import Swal from "sweetalert2";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+
+  const fetchProfile = async () => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      if (storedUser && storedUser.mobile) {
+        const res = await axiosInstance.get(`/users/${storedUser.mobile}`);
+        setUser(res.data);
+      }
+    } catch (err) {
+      console.error("Profile Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        // console.log("ss", storedUser);
-        if (storedUser && storedUser.mobile) {
-          // ব্যাকএন্ডে মোবাইল নম্বর পাঠিয়ে ডাটা আনা হচ্ছে
-          const res = await axiosInstance.get(`/users/${storedUser.mobile}`);
-          setUser(res.data);
-        }
-      } catch (err) {
-        console.error("Profile Fetch Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProfile();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/");
-    router.refresh();
+  const handleEditProfile = () => {
+    if (user) {
+      document.getElementById("edit_User_modal").showModal();
+    }
+  };
+
+  const onUpdateSave = async (updatedData) => {
+    try {
+      const res = await axiosInstance.patch(
+        `/users/${user.mobile}`,
+        updatedData,
+      );
+
+      if (res.status === 200 || res.status === 204) {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        const newUser = { ...storedUser, ...updatedData };
+        localStorage.setItem("user", JSON.stringify(newUser));
+
+        Swal.fire({
+          title: "সফল!",
+          text: "আপনার প্রোফাইল আপডেট করা হয়েছে।",
+          icon: "success",
+          confirmButtonColor: "#3085d6",
+        });
+
+        fetchProfile();
+        document.getElementById("edit_User_modal").close();
+        fetchProfile();
+      }
+    } catch (error) {
+      console.error("Update Error:", error);
+      //   Swal.fire("ব্যর্থ!", "সার্ভারে আপডেট করা সম্ভব হয়নি।", "error");
+      Swal.fire({
+        title: "ব্যর্থ!!",
+        text: "সার্ভারে আপডেট করা সম্ভব হয়নি।",
+        icon: "error",
+        confirmButtonColor: "#3085d6",
+        customClass: {
+          container: "z-999999",
+        },
+      });
+    }
   };
 
   if (loading)
@@ -52,143 +88,144 @@ export default function Profile() {
 
   if (!user)
     return (
-      <div className="text-center p-20 max-w-2xl rounded-2xl text-4xl text-error">
-        ইউজার ডাটা পাওয়া যায়নি!
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center p-10 bg-error/10 rounded-3xl border border-error">
+          <h1 className="text-2xl font-bold text-error">
+            ইউজার ডাটা পাওয়া যায়নি!
+          </h1>
+          <p className="opacity-60 text-sm">অনুগ্রহ করে আবার লগইন করুন।</p>
+        </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen  rounded p-4 md:p-8 flex justify-center items-start">
-      <div className="max-w-11/12 w-full">
-        {/* Profile Card Container */}
-        <div className="relative bg-base-100 rounded-[2.5rem] shadow-2xl overflow-hidden border border-base-300">
-          {/* Top Banner (Gradient) */}
-          <div className="h-40 bg-linear-to-r from-primary to-secondary opacity-90">
-            <p className="text-sm font-bold text-primary flex items-center gap-2">
-              <ShieldCheck size={16} /> {user.role || "user"} Account
-            </p>
+    <div className="min-h-screen p-4 md:p-8 flex justify-center items-start bg-base-200/30">
+      <div className="max-w-5xl w-full">
+        <div className="relative bg-base-100 rounded-[3rem] shadow-2xl overflow-hidden border border-base-300">
+          <div className="h-44 bg-linear-to-r from-primary to-secondary flex items-center justify-end px-12">
+            <h2 className="text-primary/30 text-6xl font-black uppercase tracking-tighter select-none">
+              আমার প্রোফাইল
+            </h2>
           </div>
 
-          {/* User Image & Basic Info */}
-          <div className="relative px-8 pb-8">
-            <div className="flex flex-col md:flex-row items-end gap-6 -mt-16">
+          <div className="relative px-8 pb-10">
+            <div className="flex flex-col md:flex-row items-end gap-6 -mt-20">
               <div className="relative group">
-                {/* ইমেজ কন্টেইনার */}
-                <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden border-8 border-base-100 shadow-xl bg-base-300">
+                <div className="w-36 h-36 md:w-44 md:h-44 rounded-[2.5rem] overflow-hidden border-8 border-base-100 shadow-2xl bg-base-300">
                   <Image
                     src={user.image || "https://i.ibb.co.com/jPvqvwG3"}
-                    alt="User"
-                    width={160}
-                    height={160}
-                    className="object-cover w-full h-full"
+                    alt="User Profile"
+                    width={200}
+                    height={200}
+                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
-
-                <div className="absolute -top-3 -right-6 z-10">
-                  <p className="uppercase w-fit px-4 py-1 rounded-2xl shadow-lg shadow-secondary/40 bg-secondary text-secondary-content font-bold text-sm md:text-base">
-                    {user.role || "user"}
-                  </p>
+                <div className="absolute -top-4 -right-4 z-10">
+                  <span className="badge badge-secondary badge-lg py-4 px-6 font-black uppercase shadow-xl border-none">
+                    {user.role || "Manager"}
+                  </span>
                 </div>
-
-                <button className="absolute bottom-2 right-2 p-2 bg-primary text-white rounded-xl shadow-lg hover:scale-110 transition-transform z-10">
-                  <Camera size={18} />
+                <button className="absolute bottom-3 right-3 p-3 bg-primary text-white rounded-2xl shadow-lg hover:rotate-12 transition-all">
+                  <Camera size={20} />
                 </button>
               </div>
 
               <div className="flex-1 pb-2">
-                <h1 className="text-3xl font-black text-base-content uppercase tracking-tighter">
+                <h1 className="text-4xl font-black text-base-content uppercase tracking-tight">
                   {user.username}
                 </h1>
-                <p className="text-sm font-bold text-primary flex items-center gap-2">
-                  <ShieldCheck size={16} /> {user.role || "user"} Account
+                <p className="text-sm font-bold text-primary flex items-center gap-2 opacity-80">
+                  <ShieldCheck size={18} /> {user?.status || "প্রসেসিং"}
                 </p>
               </div>
 
               <div className="pb-2">
                 <button
-                  onClick={handleLogout}
-                  className="btn btn-outline btn-error rounded-2xl gap-2 font-bold px-6"
+                  onClick={handleEditProfile}
+                  className="btn btn-warning btn-md rounded-2xl gap-3 font-black px-8 shadow-lg shadow-warning/20 hover:scale-105 transition-all"
                 >
-                  <LogOut size={18} /> লগ-আউট
+                  <EditIcon size={18} /> এডিট প্রোফাইল
                 </button>
               </div>
             </div>
 
-            <div className="divider opacity-50 my-8"></div>
+            <div className="divider my-10 opacity-30"></div>
 
-            {/* Information Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Info Box 1 */}
-              <div className="p-6 bg-base-200/50 rounded-[2rem] border border-base-300 hover:border-primary/30 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-primary/10 text-primary rounded-2xl group-hover:bg-primary group-hover:text-white transition-all">
-                    <User size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
-                      Username
-                    </p>
-                    <p className="text-lg font-bold text-base-content">
-                      {user.username}
-                    </p>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="p-6 bg-base-200/40 rounded-4 border border-base-300 flex items-center gap-5 hover:bg-base-100 transition-all group">
+                <div className="p-4 bg-primary/10 text-primary rounded-2xl group-hover:bg-primary group-hover:text-white transition-colors shadow-inner">
+                  <User size={28} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
+                    Username
+                  </p>
+                  <p className="text-xl font-bold text-base-content uppercase">
+                    {user.username}
+                  </p>
                 </div>
               </div>
 
-              {/* Info Box 2 */}
-              <div className="p-6 bg-base-200/50 rounded-[2rem] border border-base-300 hover:border-secondary/30 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-secondary/10 text-secondary rounded-2xl group-hover:bg-secondary group-hover:text-white transition-all">
-                    <Phone size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
-                      Mobile Number
-                    </p>
-                    <p className="text-lg font-bold text-base-content">
-                      {user.mobile}
-                    </p>
-                  </div>
+              <div className="p-6 bg-base-200/40 rounded-4 border border-base-300 flex items-center gap-5 hover:bg-base-100 transition-all group">
+                <div className="p-4 bg-secondary/10 text-secondary rounded-2xl group-hover:bg-secondary group-hover:text-white transition-colors shadow-inner">
+                  <Phone size={28} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
+                    Mobile Number
+                  </p>
+                  <p className="text-xl font-bold text-base-content">
+                    {user.mobile}
+                  </p>
                 </div>
               </div>
 
-              {/* Info Box 3 */}
-              <div className="p-6 bg-base-200/50 rounded-[2rem] border border-base-300 hover:border-accent/30 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-accent/10 text-accent rounded-2xl group-hover:bg-accent group-hover:text-white transition-all">
-                    <Calendar size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
-                      Joined Date
-                    </p>
-                    <p className="text-lg font-bold text-base-content">
-                      {new Date(user.createdAt).toLocaleDateString("bn-BD")}
-                    </p>
-                  </div>
+              <div className="p-6 bg-base-200/40 rounded-4 border border-base-300 flex items-center gap-5 hover:bg-base-100 transition-all group">
+                <div className="p-4 bg-accent/10 text-accent rounded-2xl group-hover:bg-accent group-hover:text-white transition-colors shadow-inner">
+                  <Calendar size={28} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
+                    Joined Date
+                  </p>
+                  <p className="text-xl font-bold text-base-content">
+                    {user.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString("bn-BD")
+                      : "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Quick Stats/Footer */}
-          <div className="bg-base-200 p-8 flex justify-around items-center text-center">
-            <div>
-              <p className="text-2xl font-black text-primary">৳ ৪৫০.০০</p>
-              <p className="text-[10px] uppercase font-bold opacity-50">
-                আজকের সেল
+          <div className="bg-primary/10 p-10 flex flex-wrap justify-around items-center gap-8 border-t border-base-300">
+            <div className="text-center">
+              <p className="text-3xl font-black text-primary">৳ ৪৫০.০০</p>
+              <p className="text-xs uppercase font-bold opacity-50 tracking-widest">
+                আজকের মোট বিক্রি
               </p>
             </div>
-            <div className="w-[1px] h-10 bg-base-300"></div>
-            <div>
-              <p className="text-2xl font-black text-secondary">১২ জন</p>
-              <p className="text-[10px] uppercase font-bold opacity-50">
-                মোট কাস্টমার
+            <div className="hidden md:block w-1 h-12 bg-secondary/75 rounded-2xl"></div>
+            <div className="text-center">
+              <p className="text-3xl font-black text-secondary">১২ জন</p>
+              <p className="text-xs uppercase font-bold opacity-50 tracking-widest">
+                আপনার কাস্টমার
+              </p>
+            </div>
+            <div className="hidden md:block w-1 h-12 bg-secondary/75 rounded-2xl"></div>
+            <div className="text-center">
+              <p className="text-3xl font-black text-accent pb-2 ">
+                {user?.status || "প্রসেসিং"}
+              </p>
+              <p className="text-xs uppercase font-bold opacity-50 tracking-widest">
+                অ্যাকাউন্ট স্ট্যাটাস
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      <ProfileEditModal user={user} onSave={onUpdateSave} />
     </div>
   );
 }
