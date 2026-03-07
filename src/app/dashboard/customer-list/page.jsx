@@ -22,7 +22,7 @@ import Pagination from "@/component/Global/Pagination";
 import Swal from "sweetalert2";
 import CustomerViewModal from "@/component/Modals/CustomerViewModal";
 import CustomerEditModal from "@/component/Modals/CustomerEditModal";
-import CustomerListBanner from "@/component/Dashboard/CustomerListBanner";
+import CustomerListBanner from "@/component/Bannars/CustomerListBanner";
 import CustomerGrid from "@/component/Dashboard/CustomerGrid";
 import CustomerTable from "@/component/Dashboard/CustomerTable";
 

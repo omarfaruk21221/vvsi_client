@@ -23,7 +23,7 @@ export default function UniqueGradientBanner() {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="relative w-20 h-20 rounded-[2rem] bg-gradient-to-tr from-primary to-secondary p-[2px] shadow-lg shadow-primary/20"
+              className="relative w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-secondary p-1 shadow-lg shadow-primary/20"
             >
               <div className="w-full h-full rounded-[1.9rem] bg-base-100 flex items-center justify-center">
                 <UserPlus size={32} className="text-primary" />
