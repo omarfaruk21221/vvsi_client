@@ -9,6 +9,8 @@ import {
   SearchIcon,
   ArrowUpDown,
   Users,
+  List,
+  Grid,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,12 +23,15 @@ import Swal from "sweetalert2";
 import CustomerViewModal from "@/component/Modals/CustomerViewModal";
 import CustomerEditModal from "@/component/Modals/CustomerEditModal";
 import CustomerListBanner from "@/component/Dashboard/CustomerListBanner";
+import CustomerGrid from "@/component/Dashboard/CustomerGrid";
+import CustomerTable from "@/component/Dashboard/CustomerTable";
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [sortOrder, setSortOrder] = useState("desc");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -131,18 +136,38 @@ export default function CustomerList() {
           totalCustomers={customers.length}
           filteredCount={filteredData.length}
         />
-        {/* ---search and fillter section ---  */}
+        {/* ---search ,fillter and list style section ---  */}
         <FadeIn>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 my-8 bg-base-100 p-5 rounded-3xl shadow-sm border border-base-300">
-            <div className="relative w-full md:w-96">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-              <input
-                type="search"
-                placeholder="নাম, মোবাইল বা আইডি দিয়ে খুঁজুন..."
-                className="input input-bordered w-full pl-12 bg-base-200/50 border-none rounded-2xl font-medium focus:ring-2 ring-primary/20 transition-all"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
+            {/* ভিউ টগল বাটন */}
+            <div className="flex items-center gap-4">
+              <div className="flex bg-base-200 p-1 rounded-2xl gap-1">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`btn btn-sm rounded-xl border-none ${viewMode === "list" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
+                >
+                  <List />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`btn btn-sm rounded-xl border-none ${viewMode === "grid" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
+                >
+                  <Grid />
+                </button>
+              </div>
+              {/* divider  */}
+              <span className=" w-1 h-9 bg-primary/50 rounded-2xl"></span>
+              {/* search section  */}
+              <div className="relative w-full md:w-96 border-2 border-primary/30 rounded-2xl">
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                <input
+                  type="search"
+                  placeholder="নাম, মোবাইল বা আইডি দিয়ে খুঁজুন..."
+                  className="input input-bordered w-full pl-12 bg-base-200/50 border-none rounded-2xl font-medium focus:ring-2 ring-primary/20 transition-all"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
               <button
@@ -162,108 +187,28 @@ export default function CustomerList() {
             </div>
           </div>
         </FadeIn>
-
-        <FadeIn className="overflow-x-auto w-full bg-base-100 rounded-[2.5rem] shadow-xl border border-base-300 mb-6">
-          <table className="table w-full border-separate border-spacing-y-2">
-            <thead className="bg-base-200/50">
-              <tr className="border-none">
-                <th className="rounded-l-2xl">আইডি</th>
-                <th>গ্রাহকের তথ্য</th>
-                <th>অভিভাবক</th>
-                <th>ঠিকানা ও মোবাইল</th>
-                <th>এনআইডি/জন্ম তারিখ</th>
-                <th className="text-center rounded-r-2xl">অ্যাকশন</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedCustomers.map((customer) => (
-                <tr
-                  key={customer._id}
-                  className="hover:bg-primary/5 transition-all group"
-                >
-                  <td className="font-black text-primary">
-                    #{customer.cust_id}
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-4">
-                      <div className="avatar shadow-md rounded-2xl overflow-hidden ring-2 ring-base-200 group-hover:ring-primary/20 transition-all">
-                        <div className="h-12 w-12 bg-base-300 flex items-center justify-center">
-                          {customer.image ? (
-                            <Image
-                              src={customer.image}
-                              alt="IMG"
-                              width={48}
-                              height={48}
-                              className="object-cover"
-                              unoptimized
-                            />
-                          ) : (
-                            <User2Icon className="p-3 opacity-20 text-primary" />
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-base-content group-hover:text-primary transition-colors">
-                          {customer.name}
-                        </div>
-                        <div className="text-[10px] badge badge-ghost font-bold uppercase opacity-60">
-                          {customer.category}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="text-xs">
-                    <p className="font-semibold text-base-content/70">
-                      পিতা: {customer.fatherName}
-                    </p>
-                    <p className="opacity-60">মাতা: {customer.motherName}</p>
-                  </td>
-                  <td>
-                    <div className="text-xs font-medium truncate max-w-[150px] mb-1">
-                      {customer.address}
-                    </div>
-                    <div className="badge badge-sm badge-secondary font-bold px-2">
-                      {customer.mobile}
-                    </div>
-                  </td>
-                  <td className="text-xs">
-                    <p className="font-bold text-base-content/80">
-                      {customer.dob}
-                    </p>
-                    <p className="font-mono opacity-50">{customer.nidNumber}</p>
-                  </td>
-                  <td>
-                    <div className="flex justify-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedCustomer(customer);
-                          document
-                            .getElementById("view_customer_modal")
-                            .showModal();
-                        }}
-                        className="btn btn-square btn-ghost btn-sm text-info hover:bg-info/10"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(customer)}
-                        className="btn btn-square btn-ghost btn-sm text-warning hover:bg-warning/10"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customer._id)}
-                        className="btn btn-square btn-ghost btn-sm text-error hover:bg-error/10"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </FadeIn>
+        {/* // ... রিটার্ন সেকশনের ভেতর ... */}
+        {viewMode === "list" ? (
+          <CustomerTable
+            customers={paginatedCustomers}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onView={(c) => {
+              setSelectedCustomer(c);
+              document.getElementById("view_customer_modal").showModal();
+            }}
+          />
+        ) : (
+          <CustomerGrid
+            customers={paginatedCustomers}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onView={(c) => {
+              setSelectedCustomer(c);
+              document.getElementById("view_customer_modal").showModal();
+            }}
+          />
+        )}
 
         <Pagination
           totalItems={filteredData.length}
@@ -271,7 +216,6 @@ export default function CustomerList() {
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
         />
-
         <CustomerViewModal customer={selectedCustomer} />
         <CustomerEditModal
           customer={selectedCustomer}
