@@ -20,6 +20,7 @@ import Pagination from "@/component/Global/Pagination";
 import Swal from "sweetalert2";
 import CustomerViewModal from "@/component/Modals/CustomerViewModal";
 import CustomerEditModal from "@/component/Modals/CustomerEditModal";
+import CustomerListBanner from "@/component/Dashboard/CustomerListBanner";
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState([]);
@@ -126,54 +127,11 @@ export default function CustomerList() {
             z-index: 999999 !important;
           }
         `}</style>
-
-        <section className="relative overflow-hidden rounded-xl bg-linear-to-br from-primary via-primary/90 to-secondary shadow-2xl">
-          <div className="absolute top-[-10%] right-[-5%] w-40 h-40 bg-base-content/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-[-20%] left-[-5%] w-40h-40 bg-base-content/30 rounded-full blur-3xl"></div>
-
-          <div className="relative p-4 md:py-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex flex-col items-center md:items-start text-center md:text-left">
-              <div className="flex items-center gap-3 mb-4 bg-accent/20 text-accent-content backdrop-blur-md px-6 py-2 rounded-full border border-accent">
-                <Users size={18} className="text-base-100" />
-                <span className="text-base-100 text-xs font-black uppercase tracking-[0.2em]">
-                  গ্রাহক ব্যবস্থাপনা
-                </span>
-              </div>
-
-              <RevealText className="text-2xl md:text-4xl font-black text-base-100 tracking-tighter leading-none py-3 pr-10">
-                গ্রাহকের তালিকা
-              </RevealText>
-
-              <RevealText className="text-base-300/50 text-xs md:text-base-300 font-medium max-w-md">
-                আপনার ব্যবসার সকল নিবন্ধিত গ্রাহকদের তথ্য এখানে দেখুন এবং
-                পরিচালনা করুন।
-              </RevealText>
-            </div>
-            {/* show total customer & filter data */}
-            <FadeIn>
-              <div className="hidden lg:flex items-center gap-10 border-2 bg-accent/20 border-accent p-4 rounded-2xl">
-                <div className="text-center">
-                  <p className="text-4xl font-black text-base-100">
-                    {customers.length}
-                  </p>
-                  <p className="text-xs text-base-300 uppercase font-bold tracking-widest mt-1">
-                    মোট গ্রাহক
-                  </p>
-                </div>
-                <div className="h-12 w-1 bg-accent rounded-full"></div>
-                <div className="text-center">
-                  <p className="text-4xl font-black text-base-100">
-                    {filteredData.length}
-                  </p>
-                  <p className="text-xs text-base-300 uppercase font-bold tracking-widest mt-1">
-                    ফিল্টার্ড
-                  </p>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </section>
-
+        <CustomerListBanner
+          totalCustomers={customers.length}
+          filteredCount={filteredData.length}
+        />
+        {/* ---search and fillter section ---  */}
         <FadeIn>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 my-8 bg-base-100 p-5 rounded-3xl shadow-sm border border-base-300">
             <div className="relative w-full md:w-96">

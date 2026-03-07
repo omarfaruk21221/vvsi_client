@@ -29,7 +29,7 @@ export default function UniqueGradientBanner() {
                 <UserPlus size={32} className="text-primary" />
               </div>
               {/* Small Floating Icon */}
-              <div className="absolute -top-2 -right-2 bg-yellow-400 p-1.5 rounded-lg shadow-md animate-bounce">
+              <div className="absolute -top-2 -right-2 bg-warning p-1.5 rounded-lg shadow-md animate-bounce">
                 <Sparkles size={12} className="text-white fill-white" />
               </div>
             </motion.div>
