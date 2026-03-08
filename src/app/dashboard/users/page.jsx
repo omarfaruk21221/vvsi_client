@@ -1,4 +1,5 @@
 "use client";
+import Gradian from "@/component/Global/Gradian";
 import axiosInstance from "@/lib/axios";
 import { useEffect, useState } from "react";
 
@@ -16,5 +17,5 @@ export default function users() {
     fetchUsers();
   }, []);
   console.log("users Info", user);
-  return <div>Profile Page</div>;
+  return <Gradian>afkjasdh</Gradian>;
 }

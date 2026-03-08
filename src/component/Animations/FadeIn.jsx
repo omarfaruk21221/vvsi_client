@@ -1,7 +1,12 @@
 "use client";
 import { motion } from "framer-motion";
 
-export const FadeIn = ({ children, delay = 0, direction = "up" }) => {
+export const FadeIn = ({
+  children,
+  delay = 0,
+  direction = "up",
+  className = "",
+}) => {
   const directions = {
     up: { y: 20, x: 0 },
     down: { y: -20, x: 0 },
@@ -18,6 +23,7 @@ export const FadeIn = ({ children, delay = 0, direction = "up" }) => {
         duration: 0.6,
         delay: delay,
         ease: "easeOut",
+        className: `${className}`,
       }}
     >
       {children}

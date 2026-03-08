@@ -55,7 +55,7 @@ const RegisterBanner = () => {
           </h2>
         </div>
         <div className="relative pl-6">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-transparent rounded-full" />
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-primary to-transparent rounded-full" />
 
           <p className="text-neutral/70 text-sm font-bold italic leading-relaxed max-w-sm">
             চলুন সৎভাবে ব্যবসা করি; কিয়ামতের দিন নবীগণ, সিদ্দিকগণ এবং শহীদগণের
