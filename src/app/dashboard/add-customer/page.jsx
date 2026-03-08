@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
@@ -7,23 +7,22 @@ import Link from "next/link";
 import {
   User,
   Phone,
-  Lock,
   CheckCircle,
   MapPin,
   CreditCard,
   Calendar,
   Briefcase,
+  Fingerprint,
 } from "lucide-react";
 import ImageUploadField from "@/component/Global/ImageUploadField";
 import InputField from "@/component/Global/InputField";
 import SelectField from "@/component/Global/SelectField";
-import RegisterBanner from "@/component/Bannars/RegisterBanner";
 import { RevealText } from "@/component/Animations/RevealText";
 import { FadeIn } from "@/component/Animations/FadeIn";
 import Swal from "sweetalert2";
 import AddCustomerBannar from "@/component/Bannars/AddCustomerBanner";
 
-export default function RegisterPage() {
+export default function AddCutomerPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -31,26 +30,40 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     watch,
+    reset,
     setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
       category: "সাধারণ",
       status: "Pending",
+      boxApplication: "না",
+      cust_id: "",
     },
   });
 
-  // ইমেজ আপলোড করার জন্য আলাদা ক্লিন ফাংশন
+  // ব্যাকএন্ড থেকে Max ID নিয়ে এসে ১ যোগ করার ফাংশন
+  const fetchAndSetId = async () => {
+    try {
+      const res = await axiosInstance.get("/max_cust_id");
+      const maxId = parseInt(res.data) || 0;
+      const nextId = maxId + 1;
+      setValue("cust_id", nextId);
+    } catch (err) {
+      console.error("ID Fetch Error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndSetId();
+  }, []);
+
   const uploadToImgBB = async (fileList) => {
     if (!fileList || !fileList[0]) return "";
-
     try {
       const imgFormData = new FormData();
       imgFormData.append("image", fileList[0]);
-
       const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
-      if (!apiKey) throw new Error("API Key পাওয়া যায়নি");
-
       const response = await fetch(
         `https://api.imgbb.com/1/upload?key=${apiKey}`,
         {
@@ -58,18 +71,26 @@ export default function RegisterPage() {
           body: imgFormData,
         },
       );
-
       const result = await response.json();
       if (result.success) return result.data.url;
-      throw new Error(result.error?.message || "ইমেজ আপলোড ব্যর্থ হয়েছে");
+      return "";
     } catch (error) {
-      console.error("ImgBB Upload Error:", error);
-      throw error;
+      return "";
     }
   };
 
   const onSubmit = async (data) => {
     setLoading(true);
+    Swal.fire({
+      title: "তথ্য যাচাই করা হচ্ছে...",
+      html: "অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন, আমরা আপনার তথ্য এবং ছবিগুলো সুরক্ষিতভাবে আপলোড করছি।",
+      allowOutsideClick: false,
+      timerProgressBar: true,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     try {
       const [profileUrl, nidFrontUrl, nidBackUrl] = await Promise.all([
         uploadToImgBB(data.image),
@@ -77,34 +98,51 @@ export default function RegisterPage() {
         uploadToImgBB(data.nidPdfBackpart),
       ]);
 
-      const finalPayload = {
+      const customerInfo = {
         ...data,
         image: profileUrl,
         nidPdfFornt: nidFrontUrl,
         nidPdfBackpart: nidBackUrl,
+        createdAt: new Date().toISOString(),
       };
-      console.log("register data", finalPayload);
-      const res = await axiosInstance.post("/register", finalPayload);
+
+      const res = await axiosInstance.post("/add_customers", customerInfo);
 
       if (res.status === 201 || res.status === 200) {
         Swal.fire({
           icon: "success",
-          title: "নিবন্ধন সফল!",
-          text: "আপনার অ্যাকাউন্টটি সফলভাবে তৈরি হয়েছে।",
-          confirmButtonColor: "#3085d6",
+          title: `<span style="color: #10b981">নিবন্ধন সফল হয়েছে!</span>`, // গ্রিন কালার টাইটেল
+          html: `
+    <div style="text-align: center; font-family: inherit;">
+      <p style="font-size: 16px; margin-bottom: 10px;">
+        গ্রাহক <b>${data.name}</b> এর প্রোফাইল তৈরি হয়েছে।
+      </p>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 12px; border: 1px dashed #3b82f6; display: inline-block;">
+        <span style="color: #1d4ed8; font-weight: bold; font-size: 18px;">
+          আইডি: #${data.cust_id}
+        </span>
+      </div>
+      <p style="font-size: 14px; color: #64748b; margin-top: 15px;">
+        সিস্টেমটি এখন পরবর্তী নিবন্ধনের জন্য প্রস্তুত।
+      </p>
+    </div>
+  `,
+          confirmButtonColor: "#3b82f6",
           confirmButtonText: "ঠিক আছে",
+          buttonsStyling: true,
+          customClass: {
+            confirmButton: "px-10 py-2 rounded-xl font-bold italic", // আপনার থিমের সাথে মিল রেখে
+          },
         }).then(() => {
-          router.push("/");
+          reset();
+          fetchAndSetId();
         });
       }
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "দুঃখিত...",
-        text:
-          err.response?.data?.message ||
-          err.message ||
-          "রেজিস্ট্রেশন ব্যর্থ হয়েছে",
+        title: "ব্যর্থ হয়েছে",
+        text: err.response?.data?.message || "সার্ভারে সমস্যা হয়েছে",
       });
     } finally {
       setLoading(false);
@@ -112,186 +150,190 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[90vh]  overflow-hidden">
-      <div>
-        <AddCustomerBannar />
-      </div>
-      <div className=" z-10 overflow-hidden">
-        {/* from Side: Form */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="w-11/12 mx-auto space-y-10 grid grid-cols-1 md:grid-cols-12 justify-between items-start gap-10 mb-10"
-        >
-          {/* Section: Personal Info */}
-          <section className="md:col-span-8 min-h-[100vh]: space-y-6 bg-primary/15 rounded-4xl p-6 md:p-8">
-            <header>
-              <RevealText className="text-xl lg:text-2xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-secondary to--primary  bg-clip-text text-transparent py-2">
-                নিবন্ধন ফরম
-              </RevealText>
-              <FadeIn>
-                <div className="h-1.5 w-20 bg-primary mt-2 rounded-full" />
-              </FadeIn>
-            </header>
+    <div className="min-h-[90vh] overflow-hidden bg-base-100">
+      <AddCustomerBannar />
 
-            {/* input fields  */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField
-                label="ক্যাটাগরি"
-                name="category"
-                icon={<Briefcase size={18} />}
-                options={[
-                  { label: "সাধারণ", value: "সাধারণ" },
-                  { label: "হকার", value: "হকার" },
-                  { label: "সেলসম্যান", value: "সেলসম্যান" },
-                ]}
-                register={register}
-                errors={errors}
-              />
-              <SelectField
-                label="বক্সের আবেদন "
-                name="boxApplication"
-                icon={<Briefcase size={18} />}
-                options={[
-                  { label: "না", value: "না" },
-                  { label: "হ্যা", value: "হ্যা" },
-                ]}
-                register={register}
-                errors={errors}
-              />
-              <InputField
-                label="গ্রাহকের নাম"
-                name="name"
-                icon={<User size={18} />}
-                placeholder="মোঃ ওমর ফারুক"
-                register={register}
-                errors={errors}
-                required="গ্রাহকের নাম লিখুন"
-              />
+      <div className="z-10 overflow-hidden mb-10">
+        <FadeIn>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="w-11/12 mx-auto space-y-10 grid grid-cols-1 md:grid-cols-12 justify-between items-start gap-10 "
+          >
+            {/* Section: Personal Info (Left Side) */}
+            <section className="min-h-[90vh] md:col-span-8 space-y-6 bg-primary/15 backdrop-blur-md rounded-4xl p-6 md:p-8 border border-primary/10 shadow-xl relative">
+              {/* ইউনিক আইডি ডিসপ্লে কার্ড (মাউস ক্লিক বা কার্সার যাবে না) */}
+              <div className="absolute top-6 right-6 bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 flex items-center gap-3 select-none pointer-events-none">
+                <Fingerprint className="text-primary animate-pulse" size={24} />
+                <div>
+                  <p className="text-sm uppercase font-bold text-primary/70 leading-none">
+                    গ্রাহকের আইডি
+                  </p>
+                  <input
+                    {...register("cust_id")}
+                    readOnly
+                    tabIndex="-1"
+                    className="bg-transparent border-none p-0 m-0 font-black text-xl text-primary outline-none w-16"
+                  />
+                </div>
+              </div>
 
-              <InputField
-                label="গ্রাহকের পিতার নাম"
-                name="fatherName"
-                icon={<User size={18} />}
-                register={register}
-                errors={errors}
-                placeholder="পিতার নাম"
-              />
-              <InputField
-                label="গ্রাহকের মাতার নাম"
-                name="motherName"
-                icon={<User size={18} />}
-                register={register}
-                errors={errors}
-                placeholder={"মাতার নাম"}
-              />
-              <InputField
-                label="NID নম্বর"
-                name="nidNumber"
-                icon={<CreditCard size={18} />}
-                placeholder="আপনার এনআইডি নম্বর"
-                register={register}
-                errors={errors}
-                required="NID নম্বর প্রয়োজন"
-              />
-              <InputField
-                label="জন্ম তারিখ"
-                name="dob"
-                type="date"
-                icon={<Calendar size={18} />}
-                register={register}
-                errors={errors}
-              />
+              <header>
+                <RevealText className="text-xl lg:text-2xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-secondary to-primary bg-clip-text text-transparent py-2">
+                  নিবন্ধন ফরম
+                </RevealText>
+                <FadeIn>
+                  <div className="h-1 w-25 bg-primary mt-2 rounded-full" />
+                </FadeIn>
+              </header>
 
-              <InputField
-                label="মোবাইল নম্বর"
-                name="mobile"
-                icon={<Phone size={18} />}
-                placeholder="017XXXXXXXX"
-                register={register}
-                errors={errors}
-                required="মোবাইল নম্বর আবশ্যক"
-              />
-              <div className="md:col-span-2">
-                <InputField
-                  label="পূর্ণ ঠিকানা"
-                  name="address"
-                  icon={<MapPin size={18} />}
-                  placeholder="গ্রাম, ইউনিয়ন, জেলা"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-primary p-2">
+                <SelectField
+                  label="ক্যাটাগরি"
+                  name="category"
+                  icon={<Briefcase size={18} />}
+                  options={[
+                    { label: "সাধারণ", value: "সাধারণ" },
+                    { label: "হকার", value: "হকার" },
+                    { label: "সেলসম্যান", value: "সেলসম্যান" },
+                  ]}
                   register={register}
                   errors={errors}
-                  className="h-10"
+                />
+                <SelectField
+                  label="বক্সের আবেদন"
+                  name="boxApplication"
+                  icon={<Briefcase size={18} />}
+                  options={[
+                    { label: "না", value: "না" },
+                    { label: "হ্যা", value: "হ্যা" },
+                  ]}
+                  register={register}
+                  errors={errors}
+                />
+                <InputField
+                  label="গ্রাহকের নাম"
+                  name="name"
+                  icon={<User size={18} />}
+                  placeholder="মোঃ ওমর ফারুক"
+                  register={register}
+                  errors={errors}
+                  required="গ্রাহকের নাম লিখুন"
+                />
+                <InputField
+                  label="গ্রাহকের পিতার নাম"
+                  name="fatherName"
+                  icon={<User size={18} />}
+                  register={register}
+                  errors={errors}
+                  placeholder="পিতার নাম"
+                />
+                <InputField
+                  label="গ্রাহকের মাতার নাম"
+                  name="motherName"
+                  icon={<User size={18} />}
+                  register={register}
+                  errors={errors}
+                  placeholder="মাতার নাম"
+                />
+                <InputField
+                  label="NID নম্বর"
+                  name="nidNumber"
+                  icon={<CreditCard size={18} />}
+                  placeholder="আপনার এনআইডি নম্বর"
+                  register={register}
+                  errors={errors}
+                  required="NID নম্বর প্রয়োজন"
+                />
+                <InputField
+                  label="জন্ম তারিখ"
+                  name="dob"
+                  type="date"
+                  icon={<Calendar size={18} />}
+                  register={register}
+                  errors={errors}
+                />
+                <InputField
+                  label="মোবাইল নম্বর"
+                  name="mobile"
+                  icon={<Phone size={18} />}
+                  placeholder="017XXXXXXXX"
+                  register={register}
+                  errors={errors}
+                  required="মোবাইল নম্বর আবশ্যক"
+                />
+                <div className="md:col-span-2">
+                  <InputField
+                    label="পূর্ণ ঠিকানা"
+                    name="address"
+                    icon={<MapPin size={18} />}
+                    placeholder="গ্রাম, ইউনিয়ন, জেলা"
+                    register={register}
+                    errors={errors}
+                  />
+                </div>
+              </div>
+              <div className="pt-6">
+                <button
+                  disabled={loading}
+                  type="submit"
+                  className={`w-full btn btn-primary btn-lg rounded-2xl shadow-2xl transition-all duration-300 font-bold italic flex items-center justify-center gap-2 ${loading ? "opacity-70 cursor-not-allowed" : "hover:scale-105 active:scale-95 text-base-100"}`}
+                >
+                  {loading ? (
+                    <span className="loading loading-spinner loading-md"></span>
+                  ) : (
+                    <>
+                      নিবন্ধন সম্পন্ন করুন <CheckCircle size={20} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </section>
+
+            {/* Section: Documents & Submit (Right Side) */}
+            <section className="min-h-[90vh] space-y-4 md:col-span-4 p-6 bg-primary/15 md:p-8 rounded-4xl shadow-xl border border-primary/10">
+              <header>
+                <RevealText className="text-xl lg:text-2xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-secondary to-primary bg-clip-text text-transparent py-2">
+                  ছবি আপলোড করুন
+                </RevealText>
+                <FadeIn>
+                  <div className="h-1.5 w-20 bg-primary mt-2 rounded-full" />
+                </FadeIn>
+              </header>
+
+              <div className="space-y-4">
+                <ImageUploadField
+                  label="প্রোফাইল ছবি"
+                  name="image"
+                  register={register}
+                  watch={watch}
+                  setValue={setValue}
+                  errors={errors}
+                  required
+                  heightClass="h-[180px] rounded-2xl"
+                />
+                <ImageUploadField
+                  label="NID সামনের অংশ"
+                  name="nidPdfFornt"
+                  register={register}
+                  watch={watch}
+                  setValue={setValue}
+                  errors={errors}
+                  heightClass="h-[100px] rounded-xl"
+                />
+                <ImageUploadField
+                  label="NID পিছনের অংশ"
+                  name="nidPdfBackpart"
+                  register={register}
+                  watch={watch}
+                  setValue={setValue}
+                  errors={errors}
+                  heightClass="h-[100px] rounded-xl"
                 />
               </div>
-            </div>
-            <div></div>
-          </section>
-          {/* Section: Documents */}
-          <section className="space-y-2 md:col-span-4 p-6 bg-primary/15 md:p-8 rounded-4xl shadow-xl">
-            <header>
-              <RevealText className="text-xl lg:text-2xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-secondary to--primary  bg-clip-text text-transparent py-2">
-                ছবি আপলোড করুন
-              </RevealText>
-              <FadeIn>
-                <div className="h-1.5 w-20 bg-primary mt-2 rounded-full" />
-              </FadeIn>
-            </header>
-            <ImageUploadField
-              label="প্রোফাইল ছবি"
-              name="image"
-              register={register}
-              watch={watch}
-              setValue={setValue}
-              errors={errors}
-              required
-              heightClass="h-[200px]"
-            />
-
-            <ImageUploadField
-              label="NID সামনের অংশ"
-              name="nidPdfFornt"
-              register={register}
-              watch={watch}
-              setValue={setValue}
-              errors={errors}
-              heightClass=""
-            />
-            <ImageUploadField
-              label="NID পিছনের অংশ"
-              name="nidPdfBackpart"
-              register={register}
-              watch={watch}
-              setValue={setValue}
-              errors={errors}
-              heightClass=""
-            />
-          </section>
-        </form>
+            </section>
+          </form>
+        </FadeIn>
       </div>
-      {/* Footer Actions */}
-      <footer className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-base-content/10">
-        <p className="text-base-content/60 text-sm font-medium">
-          আগেই একাউন্ট আছে?{" "}
-          <Link
-            href="/login"
-            className="text-primary font-bold hover:underline underline-offset-4"
-          >
-            লগইন করুন
-          </Link>
-        </p>
-        <button
-          disabled={loading}
-          type="submit"
-          className={`btn btn-primary btn-lg rounded-2xl px-10 shadow-2xl transition-all duration-300 ${loading ? "opacity-70" : "hover:scale-105 active:scale-95"}`}
-        >
-          {loading ? (
-            <span className="loading loading-spinner loading-md"></span>
-          ) : (
-            <span className="flex items-center gap-2 italic font-bold">
-              নিবন্ধন সম্পন্ন করুন <CheckCircle size={20} />
-            </span>
-          )}
-        </button>
-      </footer>
     </div>
   );
 }

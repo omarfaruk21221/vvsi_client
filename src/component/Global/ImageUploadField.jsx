@@ -16,7 +16,7 @@ const ImageUploadField = ({
   placeholder,
   required = false,
   className = "",
-  heightClass = "h-44", // নতুন প্রপ: যা দিয়ে হাইট কন্ট্রোল হবে
+  heightClass = "",
   ...props
 }) => {
   const [preview, setPreview] = useState(null);
