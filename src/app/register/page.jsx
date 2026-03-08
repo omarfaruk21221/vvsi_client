@@ -70,7 +70,6 @@ export default function RegisterPage() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      // ইমেজগুলো একসাথে প্যারালালি আপলোড হবে (Time efficient)
       const [profileUrl, nidFrontUrl, nidBackUrl] = await Promise.all([
         uploadToImgBB(data.image),
         uploadToImgBB(data.nidPdfFornt),
@@ -83,7 +82,7 @@ export default function RegisterPage() {
         nidPdfFornt: nidFrontUrl,
         nidPdfBackpart: nidBackUrl,
       };
-
+      console.log("register data", finalPayload);
       const res = await axiosInstance.post("/register", finalPayload);
 
       if (res.status === 201 || res.status === 200) {

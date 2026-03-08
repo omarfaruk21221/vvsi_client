@@ -6,7 +6,7 @@ import { CgUserList } from "react-icons/cg";
 import Link from "next/link";
 import { FadeIn } from "../Animations/FadeIn";
 
-export default function UniqueGradientBanner() {
+export default function AddCustomerBannar() {
   return (
     <FadeIn>
       <div className="relative overflow-hidden bg-primary/15 rounded-4xl border border-base-300 shadow-xl mb-10 group">

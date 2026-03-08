@@ -93,7 +93,7 @@ const ImageUploadField = ({
                 height={height || 500}
                 src={preview}
                 alt="Preview"
-                className="w-full h-full object-cover"
+                className="w-full h-full  object-fill"
               />
               <div className="absolute top-4 right-4 bg-success text-white p-1.5 rounded-full z-10">
                 <CheckCircle size={14} />

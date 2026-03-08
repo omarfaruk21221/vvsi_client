@@ -39,7 +39,7 @@ const DashBoardLayout = ({ children }) => {
           </div>
         </nav>
         {/* Page content here */}
-        <div className="p-4">{children}</div>
+        <div className="p-4 min-h-screen bg-primary/10">{children}</div>
       </div>
 
       <div className="drawer-side is-drawer-close:overflow-visible">
