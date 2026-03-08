@@ -1,10 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   User,
   Phone,
@@ -14,15 +13,19 @@ import {
   CreditCard,
   Calendar,
   Briefcase,
-  ShieldCheck,
 } from "lucide-react";
 import ImageUploadField from "@/component/Global/ImageUploadField";
 import InputField from "@/component/Global/InputField";
 import SelectField from "@/component/Global/SelectField";
 import RegisterBanner from "@/component/Bannars/RegisterBanner";
-// import UseTime from "@/component/Animations/UseTime";
+import { RevealText } from "@/component/Animations/RevealText";
+import { FadeIn } from "@/component/Animations/FadeIn";
+import Swal from "sweetalert2";
 
 export default function RegisterPage() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -30,93 +33,128 @@ export default function RegisterPage() {
     setValue,
     formState: { errors },
   } = useForm({
-    defaultValues: { category: "হকার", status: "Pendding" },
+    defaultValues: {
+      category: "সাধারণ",
+      status: "Pending",
+    },
   });
 
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  // ইমেজ আপলোড করার জন্য আলাদা ক্লিন ফাংশন
+  const uploadToImgBB = async (fileList) => {
+    if (!fileList || !fileList[0]) return "";
+
+    try {
+      const imgFormData = new FormData();
+      imgFormData.append("image", fileList[0]);
+
+      const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+      if (!apiKey) throw new Error("API Key পাওয়া যায়নি");
+
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${apiKey}`,
+        {
+          method: "POST",
+          body: imgFormData,
+        },
+      );
+
+      const result = await response.json();
+      if (result.success) return result.data.url;
+      throw new Error(result.error?.message || "ইমেজ আপলোড ব্যর্থ হয়েছে");
+    } catch (error) {
+      console.error("ImgBB Upload Error:", error);
+      throw error;
+    }
+  };
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const formData = new FormData();
-      Object.keys(data).forEach((key) => {
-        if (["image", "nidPdfFornt", "nidPdfBackpart"].includes(key)) {
-          if (data[key] && data[key][0]) formData.append(key, data[key][0]);
-        } else {
-          formData.append(key, data[key]);
-        }
-      });
+      // ইমেজগুলো একসাথে প্যারালালি আপলোড হবে (Time efficient)
+      const [profileUrl, nidFrontUrl, nidBackUrl] = await Promise.all([
+        uploadToImgBB(data.image),
+        uploadToImgBB(data.nidPdfFornt),
+        uploadToImgBB(data.nidPdfBackpart),
+      ]);
 
-      const res = await axiosInstance.post("/register", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const finalPayload = {
+        ...data,
+        image: profileUrl,
+        nidPdfFornt: nidFrontUrl,
+        nidPdfBackpart: nidBackUrl,
+      };
+
+      const res = await axiosInstance.post("/register", finalPayload);
 
       if (res.status === 201 || res.status === 200) {
-        alert("নিবন্ধন সফল হয়েছে!");
-        router.push("/login");
+        Swal.fire({
+          icon: "success",
+          title: "নিবন্ধন সফল!",
+          text: "আপনার অ্যাকাউন্টটি সফলভাবে তৈরি হয়েছে।",
+          confirmButtonColor: "#3085d6",
+          confirmButtonText: "ঠিক আছে",
+        }).then(() => {
+          router.push("/");
+        });
       }
     } catch (err) {
-      alert(err.response?.data?.message || "রেজিস্ট্রেশন করতে সমস্যা হয়েছে");
+      Swal.fire({
+        icon: "error",
+        title: "দুঃখিত...",
+        text:
+          err.response?.data?.message ||
+          err.message ||
+          "রেজিস্ট্রেশন ব্যর্থ হয়েছে",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-primary/45  shadow-xl group ">
-      {/* Background Theme Gradient Layer */}
-      <div className="absolute inset-0 bg-linear-to-br from-primary/50 via-secondary/30 to-primary/50 opacity-50  group-hover:opacity-80 transition-opacity duration-500"></div>
-      {/* Decorative Animated Circles */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-accent rounded-full blur-[60px] animate-pulse"></div>
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-warning blur-[60px] animate-pulse rounded-full blur-0"></div>
+    <div className="min-h-screen flex items-center justify-center bg-primary/45 shadow-xl group relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute inset-0 bg-linear-to-br from-primary/50 via-secondary/30 to-primary/50 opacity-50 transition-opacity duration-500 group-hover:opacity-80" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-accent rounded-full blur-[60px] animate-pulse" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-warning rounded-full blur-[60px] animate-pulse" />
 
-      <div className="w-10/12  grid grid-cols-1 md:grid-cols-12 justify-between items-center rounded-4xl bg-base-content/10 shadow ">
-        {/* Left Side: Professional Branding */}
-        <aside className="col-span-4 max-h-[90vh]">
+      <div className="w-11/12 md:w-10/12 grid grid-cols-1 md:grid-cols-12 justify-between items-stretch rounded-4xl bg-base-100/40 backdrop-blur-md shadow-2xl z-10 overflow-hidden border border-white/20">
+        {/* Left Side: Banner */}
+        <aside className="hidden md:block md:col-span-4 bg-primary/10">
           <RegisterBanner />
         </aside>
-        {/* Right Side: Structured Form */}
-        <aside className=" col-span-8  p-8 lg:p-16  overflow-y-auto max-h-[90vh]">
-          <div className="mb-12">
-            <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight italic">
+
+        {/* Right Side: Form */}
+        <aside className="col-span-1 md:col-span-8 p-6 lg:p-10 overflow-y-auto max-h-[90vh] custom-scrollbar">
+          <div className="mb-10">
+            <RevealText className="text-2xl lg:text-4xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-accent to-primary bg-clip-text text-transparent py-2">
               সদস্য নিবন্ধন ফরম
-            </h2>
-            <div className="h-1.5 w-20 bg-primary mt-3 rounded-full"></div>
+            </RevealText>
+            <FadeIn>
+              <div className="h-1.5 w-20 bg-primary mt-2 rounded-full" />
+            </FadeIn>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
-            {/* Section 1: Profile Image */}
-            <section>
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                <span className="w-6 h-[1px] bg-slate-200"></span> প্রোফাইল ছবি
-              </h3>
-              <div className="flex justify-start">
-                <ImageUploadField
-                  name="image"
-                  register={register}
-                  watch={watch}
-                  setValue={setValue}
-                  errors={errors}
-                  required="ছবি প্রয়োজন"
-                />
-              </div>
-            </section>
-
-            {/* Section 2: Personal Details */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+            {/* Section: Personal Info */}
             <section className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                <span className="w-6 h-[1px] bg-slate-200"></span> ব্যক্তিগত
-                তথ্য
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+              <header className="flex items-center gap-2 bg-accent/20 rounded-full py-2 px-4 w-fit">
+                <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
+                <h3 className="font-bold text-sm uppercase tracking-widest text-accent-content">
+                  ব্যক্তিগত তথ্য
+                </h3>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SelectField
                   label="ক্যাটাগরি"
                   name="category"
-                  icon={<Briefcase />}
+                  icon={<Briefcase size={18} />}
                   options={[
-                    { label: "হকার", value: "হকার" },
-                    { label: "ডিলার", value: "ডিলার" },
+                    { label: "সাধারণ", value: "সাধারণ" },
+                    { label: "মালিক", value: "মালিক" },
+                    { label: "ম্যানেজার", value: "ম্যানেজার" },
+                    { label: "কারিগর", value: "কারিগর" },
                   ]}
                   register={register}
                   errors={errors}
@@ -124,69 +162,69 @@ export default function RegisterPage() {
                 <InputField
                   label="পুরো নাম"
                   name="name"
-                  icon={<User />}
+                  icon={<User size={18} />}
                   placeholder="যেমন: ওমর ফারুক"
                   register={register}
                   errors={errors}
-                  required="নাম দিন"
+                  required="আপনার নাম লিখুন"
                 />
                 <InputField
                   label="পিতার নাম"
                   name="fatherName"
-                  icon={<User />}
-                  placeholder="পিতার নাম"
+                  icon={<User size={18} />}
                   register={register}
                   errors={errors}
                 />
                 <InputField
                   label="মাতার নাম"
                   name="motherName"
-                  icon={<User />}
-                  placeholder="মাতার নাম"
+                  icon={<User size={18} />}
                   register={register}
                   errors={errors}
                 />
                 <InputField
-                  label="মোবাইল নম্বর"
-                  name="mobile"
-                  icon={<Phone />}
-                  placeholder="017XXXXXXXX"
+                  label="NID নম্বর"
+                  name="nidNumber"
+                  icon={<CreditCard size={18} />}
+                  placeholder="আপনার এনআইডি নম্বর"
                   register={register}
                   errors={errors}
-                  required="মোবাইল নম্বর দিন"
+                  required="NID নম্বর প্রয়োজন"
                 />
                 <InputField
                   label="জন্ম তারিখ"
                   name="dob"
                   type="date"
-                  icon={<Calendar />}
+                  icon={<Calendar size={18} />}
                   register={register}
                   errors={errors}
                 />
               </div>
             </section>
 
-            {/* Section 3: Identity & Security */}
+            {/* Section: Security */}
             <section className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                <span className="w-6 h-[1px] bg-slate-200"></span> পরিচয় ও
-                নিরাপত্তা
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+              <header className="flex items-center gap-2 bg-primary/20 rounded-full py-2 px-4 w-fit">
+                <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                <h3 className="font-bold text-sm uppercase tracking-widest text-primary-content">
+                  পরিচয় ও নিরাপত্তা
+                </h3>
+              </header>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputField
-                  label="NID নম্বর"
-                  name="nidNumber"
-                  icon={<CreditCard />}
-                  placeholder="আপনার এনআইডি নম্বর"
+                  label="মোবাইল নম্বর"
+                  name="mobile"
+                  icon={<Phone size={18} />}
+                  placeholder="017XXXXXXXX"
                   register={register}
                   errors={errors}
-                  required="NID আবশ্যক"
+                  required="মোবাইল নম্বর আবশ্যক"
                 />
                 <InputField
                   label="গোপন পাসওয়ার্ড"
                   name="password"
                   type="password"
-                  icon={<Lock />}
+                  icon={<Lock size={18} />}
                   placeholder="••••••••"
                   register={register}
                   errors={errors}
@@ -196,62 +234,81 @@ export default function RegisterPage() {
               <InputField
                 label="পূর্ণ ঠিকানা"
                 name="address"
-                icon={<MapPin />}
+                icon={<MapPin size={18} />}
                 placeholder="গ্রাম, ইউনিয়ন, জেলা"
                 register={register}
                 errors={errors}
               />
             </section>
 
-            {/* Section 4: Document Upload */}
+            {/* Section: Documents */}
             <section className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                <span className="w-6 h-1 bg-slate-200"></span> এনআইডি কপি আপলোড
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary/70 flex items-center gap-3">
+                <span className="w-8 h-1 bg-primary/30" /> ছবি ও ডকুমেন্ট
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <ImageUploadField
-                  label="NID (Front)"
-                  name="nidPdfFornt"
-                  register={register}
-                  watch={watch}
-                  setValue={setValue}
-                  errors={errors}
-                />
-                <ImageUploadField
-                  label="NID (Back)"
-                  name="nidPdfBackpart"
-                  register={register}
-                  watch={watch}
-                  setValue={setValue}
-                  errors={errors}
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+                <div className="md:col-span-5">
+                  <ImageUploadField
+                    label="প্রোফাইল ছবি"
+                    name="image"
+                    register={register}
+                    watch={watch}
+                    setValue={setValue}
+                    errors={errors}
+                    required
+                    heightClass="h-full min-h-[320px]"
+                  />
+                </div>
+
+                <div className="md:col-span-7 flex flex-col gap-4">
+                  <ImageUploadField
+                    label="NID সামনের অংশ"
+                    name="nidPdfFornt"
+                    register={register}
+                    watch={watch}
+                    setValue={setValue}
+                    errors={errors}
+                    heightClass="h-[152px]"
+                  />
+                  <ImageUploadField
+                    label="NID পিছনের অংশ"
+                    name="nidPdfBackpart"
+                    register={register}
+                    watch={watch}
+                    setValue={setValue}
+                    errors={errors}
+                    heightClass="h-[152px]"
+                  />
+                </div>
               </div>
             </section>
 
-            {/* Action Area */}
-            <div className="pt-10 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-100">
-              <p className="text-slate-500 text-sm font-medium">
+            {/* Footer Actions */}
+            <footer className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-base-content/10">
+              <p className="text-base-content/60 text-sm font-medium">
                 আগেই একাউন্ট আছে?{" "}
                 <Link
                   href="/login"
-                  className="text-primary font-bold hover:underline"
+                  className="text-primary font-bold hover:underline underline-offset-4"
                 >
                   লগইন করুন
                 </Link>
               </p>
               <button
                 disabled={loading}
-                className="btn btn-primary btn-lg rounded-2xl px-12 h-16 min-w-[200px] shadow-xl shadow-primary/20 flex items-center gap-3 italic"
+                type="submit"
+                className={`btn btn-primary btn-lg rounded-2xl px-10 shadow-2xl transition-all duration-300 ${loading ? "opacity-70" : "hover:scale-105 active:scale-95"}`}
               >
                 {loading ? (
-                  <span className="loading loading-spinner"></span>
+                  <span className="loading loading-spinner loading-md"></span>
                 ) : (
-                  <>
+                  <span className="flex items-center gap-2 italic font-bold">
                     নিবন্ধন সম্পন্ন করুন <CheckCircle size={20} />
-                  </>
+                  </span>
                 )}
               </button>
-            </div>
+            </footer>
           </form>
         </aside>
       </div>

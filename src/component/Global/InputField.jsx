@@ -45,7 +45,7 @@ const InputField = ({
           type={type}
           placeholder={placeholder}
           {...register(name, { required: required })}
-          className={`input input-bordered w-full bg-base-100/50 backdrop-blur-sm rounded-2xl 
+          className={`input input-bordered w-full bg-base-300/50 backdrop-blur-sm rounded-2xl 
             transition-all duration-300 border-base-300
             focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none
             ${icon ? "pl-12" : "pl-5"} 
