@@ -8,10 +8,17 @@ import {
   Calendar,
   Camera,
   EditIcon,
+  User2Icon,
+  UserCog,
+  PhoneCall,
+  LocationEdit,
+  CardSimIcon,
+  Cake,
 } from "lucide-react";
 import Image from "next/image";
 import ProfileEditModal from "@/component/Modals/ProfileEditModal";
 import Swal from "sweetalert2";
+import DetailsCard from "@/component/Global/DetailsCard";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -78,7 +85,7 @@ export default function Profile() {
       });
     }
   };
-
+  console.log("Active user", user);
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen bg-base-200">
@@ -122,7 +129,7 @@ export default function Profile() {
                 </div>
                 <div className="absolute -top-4 -right-4 z-10">
                   <span className="badge badge-secondary badge-lg py-4 px-6 font-black uppercase shadow-xl border-none">
-                    {user.role || "Manager"}
+                    {user.category || "সাধারণ"}
                   </span>
                 </div>
                 <button className="absolute bottom-3 right-3 p-3 bg-primary text-white rounded-2xl shadow-lg hover:rotate-12 transition-all">
@@ -132,7 +139,7 @@ export default function Profile() {
 
               <div className="flex-1 pb-2">
                 <h1 className="text-4xl font-black text-base-content uppercase tracking-tight">
-                  {user.username}
+                  {user?.name || "নাম নেই "}
                 </h1>
                 <p className="text-sm font-bold text-primary flex items-center gap-2 opacity-80">
                   <ShieldCheck size={18} /> {user?.status || "প্রসেসিং"}
@@ -152,49 +159,66 @@ export default function Profile() {
             <div className="divider my-10 opacity-30"></div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="p-6 bg-base-200/40 rounded-4 border border-base-300 flex items-center gap-5 hover:bg-base-100 transition-all group">
-                <div className="p-4 bg-primary/10 text-primary rounded-2xl group-hover:bg-primary group-hover:text-white transition-colors shadow-inner">
-                  <User size={28} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
-                    Username
-                  </p>
-                  <p className="text-xl font-bold text-base-content uppercase">
-                    {user.username}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-6 bg-base-200/40 rounded-4 border border-base-300 flex items-center gap-5 hover:bg-base-100 transition-all group">
-                <div className="p-4 bg-secondary/10 text-secondary rounded-2xl group-hover:bg-secondary group-hover:text-white transition-colors shadow-inner">
-                  <Phone size={28} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
-                    Mobile Number
-                  </p>
-                  <p className="text-xl font-bold text-base-content">
-                    {user.mobile}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-6 bg-base-200/40 rounded-4 border border-base-300 flex items-center gap-5 hover:bg-base-100 transition-all group">
-                <div className="p-4 bg-accent/10 text-accent rounded-2xl group-hover:bg-accent group-hover:text-white transition-colors shadow-inner">
-                  <Calendar size={28} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase font-black opacity-40 tracking-widest">
-                    Joined Date
-                  </p>
-                  <p className="text-xl font-bold text-base-content">
-                    {user.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString("bn-BD")
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
+              <DetailsCard
+                iconClass={
+                  "bg-secondary/10 text-secondary group-hover:bg-secondary "
+                }
+                icon={<User2Icon size={20} />}
+                tittle={"পিতার নাম"}
+                tittleClass=""
+                value={user.fatherName}
+              />
+              <DetailsCard
+                iconClass={
+                  "bg-secondary/10 text-warning group-hover:bg-warning "
+                }
+                icon={<UserCog size={20} />}
+                tittle={"মাতার নাম"}
+                value={user.motherName}
+              />
+              <DetailsCard
+                iconClass={
+                  "bg-green-100 text-green-500 group-hover:bg-green-500 "
+                }
+                icon={<PhoneCall size={20} />}
+                tittle={"মোবাইল"}
+                tittleClass=""
+                value={user.mobile}
+              />
+              <DetailsCard
+                iconClass={
+                  "bg-amber-900/40 text-amber-900 group-hover:bg-amber-900 "
+                }
+                icon={<LocationEdit size={20} />}
+                tittle={"ঠিকানা"}
+                tittleClass=""
+                value={user.address}
+              />
+              <DetailsCard
+                iconClass={"bg-sky-900/40 text-sky-900 group-hover:bg-sky-900 "}
+                icon={<CardSimIcon size={20} />}
+                tittle={"NID নম্বর"}
+                tittleClass=""
+                value={user.nidNumber}
+              />
+              <DetailsCard
+                iconClass={"bg-sky-500/40 text-sky-500 group-hover:bg-sky-500 "}
+                icon={<Cake size={20} />}
+                tittle={"জন্ম তারিখ"}
+                tittleClass=""
+                value={user.dob}
+              />
+              <DetailsCard
+                iconClass={"bg-accent/10 text-accent group-hover:bg-accent"}
+                icon={<Calendar size={20} />}
+                tittle={"নিয়োগের তারিখ"}
+                tittleClass=""
+                value={
+                  user.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString("bn-BD")
+                    : "N/A"
+                }
+              />
             </div>
           </div>
 
