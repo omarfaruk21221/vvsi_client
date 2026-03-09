@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
@@ -13,6 +13,7 @@ import {
   CreditCard,
   Calendar,
   Briefcase,
+  Fingerprint,
 } from "lucide-react";
 import ImageUploadField from "@/component/Global/ImageUploadField";
 import InputField from "@/component/Global/InputField";
@@ -25,6 +26,7 @@ import Swal from "sweetalert2";
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  // const [maxUserId, setMaxUserId] = useState();
 
   const {
     register,
@@ -36,6 +38,7 @@ export default function RegisterPage() {
     defaultValues: {
       category: "সাধারণ",
       status: "Pending",
+      user_id: "",
     },
   });
 
@@ -66,6 +69,22 @@ export default function RegisterPage() {
       throw error;
     }
   };
+
+  //  get max user id
+  const getMaxId = async () => {
+    try {
+      const res = await axiosInstance.get("/max-user-id");
+      const NextId = parseInt(res.data);
+      const MaxId = NextId + 1;
+      setValue("user_id", MaxId);
+      console.log("user_id", MaxId);
+    } catch {
+      console.error("ID Fetch Error:", err);
+    }
+  };
+  useEffect(() => {
+    getMaxId();
+  }, []);
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -137,6 +156,21 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
             {/* Section: Personal Info */}
             <section className="space-y-6">
+              {/* ইউনিক আইডি ডিসপ্লে কার্ড (মাউস ক্লিক বা কার্সার যাবে না) */}
+              <div className="absolute top-6 right-6 bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 flex items-center gap-3 select-none pointer-events-none">
+                <Fingerprint className="text-primary animate-pulse" size={24} />
+                <div>
+                  <p className="text-sm uppercase font-bold text-primary/70 leading-none">
+                    আইডি
+                  </p>
+                  <input
+                    {...register("user_id")}
+                    readOnly
+                    tabIndex="-1"
+                    className="bg-transparent border-none p-0 m-0 font-black text-xl text-primary outline-none w-16"
+                  />
+                </div>
+              </div>
               <header className="flex items-center gap-2 bg-accent/20 rounded-full py-2 px-4 w-fit">
                 <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
                 <h3 className="font-bold text-sm uppercase tracking-widest text-accent-content">
@@ -146,6 +180,7 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SelectField
+                  defaultValue="সাধারণ"
                   label="ক্যাটাগরি"
                   name="category"
                   icon={<Briefcase size={18} />}

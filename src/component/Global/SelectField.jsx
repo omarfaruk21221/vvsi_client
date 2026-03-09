@@ -9,6 +9,7 @@ const SelectField = ({
   options = [], // [{label: 'হকার', value: 'হকার'}]
   icon,
   register,
+  defaultValue,
   errors,
   required = false,
   className = "",
@@ -35,6 +36,7 @@ const SelectField = ({
         )}
 
         <select
+          defaultValue={{ defaultValue }}
           {...register(name, { required: required })}
           {...props}
           className={`select select-bordered w-full bg-base-200/50 backdrop-blur-sm rounded-2xl 
@@ -44,9 +46,6 @@ const SelectField = ({
             ${errors[name] ? "border-error" : "hover:border-primary/50"}
             font-medium text-base-content`}
         >
-          <option value="" disabled selected>
-            বাছাই করুন
-          </option>
           {options.map((opt, index) => (
             <option key={index} value={opt.value}>
               {opt.label}

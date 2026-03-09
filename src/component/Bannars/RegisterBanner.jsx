@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { HelpCircle, ShieldCheck, Sparkles, UserCheck } from "lucide-react";
 import { FadeIn } from "../Animations/FadeIn";
 import Image from "next/image";
-import { TypingText } from "../Animations/TypingText";
 import { RevealText } from "../Animations/RevealText";
 
 const RegisterBanner = () => {
@@ -30,11 +29,11 @@ const RegisterBanner = () => {
           />
           <div className=" absolute right-0 top-1 animate-bounce">
             <Image
-              width={130}
-              height={130}
+              width={100}
+              height={100}
               src="/catoon.png"
               alt="brand-logo"
-              className="drop-shadow-2xl"
+              className="w-full h-full drop-shadow-2xl"
             />
           </div>
           {/* --- sub heading --  */}
