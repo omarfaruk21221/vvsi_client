@@ -10,6 +10,8 @@ import {
   UserPlus,
   Users,
   Undo2,
+  ShieldUser,
+  ContactRound,
 } from "lucide-react";
 import NavLink from "../Global/NavLink";
 
@@ -44,6 +46,16 @@ export default function DashLinks() {
       name: "বাকি হিসাব",
       icon: <ReceiptText size={20} />,
       link: "/dashboard/due-records",
+    },
+    {
+      name: "কর্মচারীদের আবেদন ",
+      icon: <ShieldUser size={20} />,
+      link: "/dashboard/worker-application",
+    },
+    {
+      name: " কর্মচারীদের তালিকা",
+      icon: <ContactRound size={20} />,
+      link: "/dashboard/worker-list",
     },
     {
       name: "কাস্টমার যুক্ত করুন",
