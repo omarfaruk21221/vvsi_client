@@ -14,6 +14,7 @@ import {
   LocationEdit,
   CardSimIcon,
   Cake,
+  CreditCard,
 } from "lucide-react";
 import Image from "next/image";
 import ProfileEditModal from "@/component/Modals/ProfileEditModal";
@@ -195,20 +196,6 @@ export default function Profile() {
                 value={user.address}
               />
               <DetailsCard
-                iconClass={"bg-sky-900/40 text-sky-900 group-hover:bg-sky-900 "}
-                icon={<CardSimIcon size={20} />}
-                tittle={"NID নম্বর"}
-                tittleClass=""
-                value={user.nidNumber}
-              />
-              <DetailsCard
-                iconClass={"bg-sky-500/40 text-sky-500 group-hover:bg-sky-500 "}
-                icon={<Cake size={20} />}
-                tittle={"জন্ম তারিখ"}
-                tittleClass=""
-                value={user.dob}
-              />
-              <DetailsCard
                 iconClass={"bg-accent/10 text-accent group-hover:bg-accent"}
                 icon={<Calendar size={20} />}
                 tittle={"নিয়োগের তারিখ"}
@@ -219,6 +206,72 @@ export default function Profile() {
                     : "N/A"
                 }
               />
+
+              <DetailsCard
+                iconClass={"bg-sky-500/40 text-sky-500 group-hover:bg-sky-500 "}
+                icon={<Cake size={20} />}
+                tittle={"জন্ম তারিখ"}
+                tittleClass=""
+                value={user.dob}
+              />
+              <DetailsCard
+                iconClass={"bg-sky-900/40 text-sky-900 group-hover:bg-sky-900 "}
+                icon={<CardSimIcon size={20} />}
+                tittle={"NID নম্বর"}
+                tittleClass=""
+                valueClass="tracking-[0.3em]"
+                value={user.nidNumber}
+              />
+            </div>
+          </div>
+
+          {/* NID Card Premium View */}
+          <div className="mx-10">
+            <div className="flex items-center gap-5">
+              <div className="h-15 w-1.5 bg-primary rounded-full"></div>
+              <h3 className="text-3xl font-black text-primary/90 uppercase italic tracking-tighter">
+                পরিচয়পত্র (NID)
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 px-10 py-5">
+              {/* Card Front */}
+              <div className="group space-y-4">
+                <p className="text-xs font-black text-secondary/70 uppercase tracking-[0.3em] ml-2 italic">
+                  NID এর সামনের অংশ
+                </p>
+                <div className="relative aspect-[1.6/1] bg-base-200 rounded-[2.5rem] overflow-hidden border-4 border-accent/75 shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:shadow-primary/10">
+                  <Image
+                    src={
+                      user.nidPdfFornt ||
+                      "https://i.ibb.co.com/mrgsh0vY/nid-placeholder.png"
+                    }
+                    alt="NID Front"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 500px"
+                  />
+                </div>
+              </div>
+
+              {/* Card Back */}
+              <div className="group space-y-4">
+                <p className="text-xs font-black text-secondary/70 uppercase tracking-[0.3em] text-center italic">
+                  NID এর পিছেনের অংশ
+                </p>
+                <div className="relative aspect-[1.6/1] bg-base-200 rounded-[2.5rem] overflow-hidden border-[6px] border-accent/75 shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:shadow-secondary/10">
+                  <Image
+                    src={
+                      user.nidPdfBackpart ||
+                      "https://i.ibb.co.com/mrgsh0vY/nid-placeholder.png"
+                    }
+                    alt="NID Back"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 500px"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

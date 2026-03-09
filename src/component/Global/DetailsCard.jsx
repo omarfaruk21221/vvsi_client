@@ -7,6 +7,7 @@ export default function DetailsCard({
   className = "",
   tittleClass = "",
   iconClass = "",
+  valueClass = "",
   ...props
 }) {
   return (
@@ -22,7 +23,9 @@ export default function DetailsCard({
         >
           {tittle}
         </p>
-        <p className="text-xl font-bold text-base-content">{value}</p>
+        <p className={`${valueClass} text-xl font-bold text-base-content`}>
+          {value}
+        </p>
       </div>
     </div>
   );
