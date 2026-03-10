@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-
 import {
   ArrowUpDown,
   Grid,
@@ -11,66 +10,43 @@ import {
   UserPlusIcon,
   CheckCircle2,
   XCircle,
-  Briefcase,
   Loader2,
   MapPin,
   Calendar,
   Fingerprint,
 } from "lucide-react";
-
 import { FadeIn } from "@/component/Animations/FadeIn";
-
 import { AnimatedButton } from "@/component/Animations/AnimatedBtn";
-
 import WorkerListBanner from "@/component/Bannars/WorkerListBannar";
-
 import axiosInstance from "@/lib/axios";
-
 import Swal from "sweetalert2";
-
 import Link from "next/link";
-
 import Pagination from "@/component/Global/Pagination";
-
 import Image from "next/image";
 
 export default function WorkerApplicationList() {
   const [workers, setWorkers] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [searchText, setSearchText] = useState("");
-
   const [sortOrder, setSortOrder] = useState("desc");
-
   const [viewMode, setViewMode] = useState("list");
-
   const [currentPage, setCurrentPage] = useState(1);
-
   const [totalItems, setTotalItems] = useState(0);
-
   const itemsPerPage = 10;
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
-
     try {
       const response = await axiosInstance.get("/users", {
         params: {
           status: "pending",
-
           search: searchText,
-
           sort: sortOrder,
-
           page: currentPage,
-
           limit: itemsPerPage,
         },
       });
-
       setWorkers(response.data.data || response.data);
-
       setTotalItems(
         Number(response.data.totalCount || response.data.length || 0),
       );
@@ -85,48 +61,48 @@ export default function WorkerApplicationList() {
     const delayDebounceFn = setTimeout(() => {
       fetchApplications();
     }, 500);
-
     return () => clearTimeout(delayDebounceFn);
   }, [fetchApplications]);
 
+  // স্ট্যাটাস আপডেট করার ফাংশন (ফিক্সড)
   const handleStatusUpdate = async (id, newStatus) => {
+    const statusLabel = newStatus === "active" ? "এপ্রুভ" : "বাতিল";
+
     const result = await Swal.fire({
       title: "আপনি কি নিশ্চিত?",
-
-      text: `আবেদনটি ${newStatus === "active" ? "এপ্রুভ" : "বাতিল"} করতে চান?`,
-
+      text: `আবেদনটি ${statusLabel} করতে চান?`,
       icon: "warning",
-
       showCancelButton: true,
-
       confirmButtonText: "হ্যাঁ",
-
       cancelButtonText: "না",
+      confirmButtonColor: newStatus === "active" ? "#22c55e" : "#ef4444",
     });
 
     if (result.isConfirmed) {
       try {
-        await axiosInstance.patch(`/update_user/${id}`, { status: newStatus });
+        // API কল
+        const response = await axiosInstance.patch(`/update_user/${id}`, {
+          status: newStatus,
+        });
 
-        Swal.fire("সফল!", `স্ট্যাটাস এখন ${newStatus}`, "success");
-
+        // সঠিক রেসপন্স চেক
         if (response.status === 200 || response.status === 204) {
           await Swal.fire({
             title: "সফল!",
-
-            text: `আবেদনটি সফলভাবে ${newStatus === "active" ? "এপ্রুভ" : "বাতিল"} করা হয়েছে।`,
-
+            text: `আবেদনটি সফলভাবে ${statusLabel} করা হয়েছে।`,
             icon: "success",
-
             timer: 1500,
-
             showConfirmButton: false,
           });
+          fetchApplications(); // ডাটা রিফ্রেশ করা
         }
-
-        fetchApplications();
       } catch (error) {
-        Swal.fire("ব্যর্থ!", "সার্ভারে সমস্যা হয়েছে", "error");
+        console.error("Status update error:", error);
+        Swal.fire(
+          "ব্যর্থ!",
+          "সার্ভারে সমস্যা হয়েছে, আবার চেষ্টা করুন।",
+          "error",
+        );
       }
     }
   };
@@ -141,8 +117,6 @@ export default function WorkerApplicationList() {
           count={totalItems}
         />
 
-        {/* কন্ট্রোল বার */}
-
         <div className="sticky top-5 z-30 backdrop-blur-md">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4 my-8 bg-primary/10 p-5 rounded-[2.5rem] shadow-sm border border-primary/20">
             <div className="flex items-center gap-4 w-full lg:w-auto">
@@ -153,7 +127,6 @@ export default function WorkerApplicationList() {
                 >
                   <List size={18} />
                 </button>
-
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`btn btn-sm rounded-xl border-none ${viewMode === "grid" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
@@ -166,7 +139,6 @@ export default function WorkerApplicationList() {
 
               <div className="relative w-full md:w-80">
                 <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary opacity-60" />
-
                 <input
                   type="search"
                   placeholder="নাম, মোবাইল বা আইডি..."
@@ -174,7 +146,6 @@ export default function WorkerApplicationList() {
                   value={searchText}
                   onChange={(e) => {
                     setSearchText(e.target.value);
-
                     setCurrentPage(1);
                   }}
                 />
@@ -189,7 +160,6 @@ export default function WorkerApplicationList() {
                 className="btn btn-ghost bg-base-100 hover:bg-base-200 gap-2 rounded-2xl font-bold px-6 shadow-sm flex-1 md:flex-none"
               >
                 <ArrowUpDown size={16} />
-
                 {sortOrder === "asc" ? "পুরাতন" : "নতুন"}
               </button>
 
@@ -205,38 +175,27 @@ export default function WorkerApplicationList() {
           </div>
         </div>
 
-        {/* ডাটা রেন্ডারিং */}
-
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24">
             <Loader2 className="w-12 h-12 text-primary animate-spin opacity-20" />
-
             <p className="mt-4 font-bold opacity-30 animate-pulse">
               ডাটা লোড হচ্ছে...
             </p>
           </div>
         ) : workers.length > 0 ? (
           viewMode === "list" ? (
-            /* টেবিল ভিউ */
-
             <div className="overflow-x-auto bg-base-100 rounded-[2.5rem] border border-base-300 shadow-xl">
               <table className="table w-full border-separate border-spacing-0">
                 <thead className="bg-primary/25 text-primary">
                   <tr>
                     <th className="p-6 rounded-tl-[2.5rem]">আবেদনকারী</th>
-
                     <th>অভিভাবক</th>
-
                     <th>এনআইডি ও জন্ম</th>
-
                     <th>ঠিকানা</th>
-
                     <th>অবস্থান</th>
-
                     <th className="text-center rounded-tr-[2.5rem]">অ্যাকশন</th>
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-base-200">
                   {workers.map((worker) => (
                     <tr
@@ -256,78 +215,66 @@ export default function WorkerApplicationList() {
                               />
                             </div>
                           </div>
-
                           <div>
-                            <p className="font-black text-base text-base-content leading-none uppercase italic tracking-tighter group-hover:text-primary transition-colors">
+                            <p className="font-black text-base leading-none uppercase italic tracking-tighter group-hover:text-primary transition-colors">
                               {worker.name}
                             </p>
-
                             <span className="badge badge-sm badge-ghost font-bold mt-2 opacity-70 uppercase tracking-widest text-[9px]">
                               {worker.category}
                             </span>
                           </div>
                         </div>
                       </td>
-
                       <td className="text-xs">
                         <p className="font-bold text-base-content/80 mb-1">
                           পিতা: {worker.fatherName}
                         </p>
-
                         <p className="opacity-60 italic">
                           মাতা: {worker.motherName}
                         </p>
                       </td>
-
                       <td className="text-xs">
                         <div className="flex items-center gap-1 font-mono font-bold text-primary mb-1">
                           <Fingerprint size={14} /> {worker.nidNumber}
                         </div>
-
                         <div className="flex items-center gap-1 opacity-60">
                           <Calendar size={14} /> {worker.dob}
                         </div>
                       </td>
-
                       <td>
                         <div className="flex items-start gap-1 text-xs mb-1">
                           <MapPin
                             size={14}
                             className="mt-0.5 text-secondary shrink-0"
                           />
-
                           <span className="truncate">{worker.address}</span>
                         </div>
-
                         <p className="text-xs font-black text-secondary ml-4">
                           {worker.mobile}
                         </p>
                       </td>
-
-                      <td className="">
+                      <td>
                         <span
-                          className={`${worker.status == "pending" ? "bg-warning py-1 text-warning-content rounded-2xl px-4" : "bg-success text-success-content"}`}
+                          className={`${worker.status === "pending" ? "bg-warning py-1 text-warning-content rounded-2xl px-4 text-xs font-bold" : "bg-success text-success-content px-4 py-1 rounded-2xl text-xs font-bold"}`}
                         >
-                          {`${worker.status == "pending" ? "প্রসেসিং,,,," : "কর্মরত"}`}
+                          {worker.status === "pending" ? "প্রসেসিং" : "কর্মরত"}
                         </span>
                       </td>
-
                       <td>
                         <div className="flex justify-center gap-2">
                           <button
                             onClick={() =>
                               handleStatusUpdate(worker._id, "active")
                             }
-                            className="btn btn-sm btn-success rounded-xl text-white gap-1 shadow-md hover:scale-105 transition-transform"
+                            className="btn btn-sm btn-success rounded-xl text-white gap-1 shadow-md hover:scale-105"
                           >
                             <CheckCircle2 size={16} /> গ্রহণ
                           </button>
-
                           <button
                             onClick={() =>
                               handleStatusUpdate(worker._id, "rejected")
                             }
-                            className="btn btn-sm btn-ghost hover:bg-error/10 text-error rounded-xl transition-colors"
+                            className="btn btn-sm btn-ghost hover:bg-error/10 text-error rounded-xl"
                           >
                             <XCircle size={16} /> বাতিল
                           </button>
@@ -339,8 +286,6 @@ export default function WorkerApplicationList() {
               </table>
             </div>
           ) : (
-            /* গ্রিড ভিউ */
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {workers.map((worker) => (
                 <div
@@ -348,52 +293,44 @@ export default function WorkerApplicationList() {
                   className="bg-base-100 p-6 rounded-[2.5rem] border border-base-300 shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 p-4">
-                    <div className="badge badge-warning font-black text-[10px] uppercase italic shadow-sm">
+                    <div className="badge badge-warning font-black text-[10px] uppercase italic">
                       {worker.status === "active" ? "সক্রিয়" : "প্রসেসিং"}
                     </div>
                   </div>
-
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="relative">
                       <Image
                         width={120}
                         height={120}
                         src={worker.image || "/avatar.png"}
-                        className="w-28 h-28 rounded-[4xl object-cover ring-4 ring-primary/5 shadow-inner transition-transform group-hover:rotate-3 group-hover:scale-105"
+                        className="w-28 h-28 rounded-3xl object-cover ring-4 ring-primary/5 shadow-inner"
                         alt={worker.name}
                       />
-
                       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-base-100 text-sm font-bold px-4 py-1 rounded-full shadow-lg whitespace-nowrap">
                         {worker.category}
                       </div>
                     </div>
-
                     <div className="w-full pt-2">
                       <h3 className="font-black text-xl italic uppercase tracking-tighter text-base-content truncate">
                         {worker.name}
                       </h3>
-
                       <p className="text-xs font-black text-primary mb-4">
                         {worker.mobile}
                       </p>
-
-                      <div className="bg-primary/5 rounded-4xl p-4 text-left text-[11px] space-y-2 border border-primary/10">
+                      <div className="bg-primary/5 rounded-3xl p-4 text-left text-[11px] space-y-2 border border-primary/10">
                         <p className="truncate flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
                           <strong>পিতা:</strong> {worker.fatherName}
                         </p>
-
                         <p className="truncate flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
                           <strong>ঠিকানা:</strong> {worker.address}
                         </p>
-
                         <p className="font-mono text-[10px] text-center pt-2 border-t border-primary/10 mt-2 opacity-70">
                           {worker.nidNumber}
                         </p>
                       </div>
                     </div>
-
                     <div className="flex gap-2 w-full">
                       <button
                         onClick={() => handleStatusUpdate(worker._id, "active")}
@@ -401,7 +338,6 @@ export default function WorkerApplicationList() {
                       >
                         এপ্রুভ
                       </button>
-
                       <button
                         onClick={() =>
                           handleStatusUpdate(worker._id, "rejected")
@@ -417,18 +353,13 @@ export default function WorkerApplicationList() {
             </div>
           )
         ) : (
-          /* এমটি স্টেট */
-
           <div className="flex flex-col items-center justify-center py-24 bg-base-100 rounded-[3rem] border-2 border-dashed border-base-300">
             <ShieldUser size={80} className="opacity-10 mb-4 text-primary" />
-
             <p className="font-black text-xl opacity-20 uppercase tracking-[0.2em] text-base-content">
-              কোনো আবেদন পাওয়া যায়নি
+              কোনো আবেদন পাওয়া যায়নি
             </p>
           </div>
         )}
-
-        {/* পেজিনেশন */}
 
         <div className="mt-12 flex justify-center">
           <Pagination
@@ -442,20 +373,3 @@ export default function WorkerApplicationList() {
     </div>
   );
 }
-
-const Edit3 = ({ size }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 20h9" />
-
-    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-  </svg>
-);
