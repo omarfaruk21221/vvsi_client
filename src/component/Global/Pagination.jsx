@@ -10,7 +10,7 @@ export default function Pagination({
 }) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  if (totalPages <= 1) return null; // ১ পেজ হলে প্যাগিনেশন দেখাবে না
+  if (totalPages <= 1) return null;
 
   const handlePrev = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);

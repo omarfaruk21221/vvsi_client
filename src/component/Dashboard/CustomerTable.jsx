@@ -5,23 +5,29 @@ import { FadeIn } from "../Animations/FadeIn";
 
 export default function CustomerTable({ customers, onEdit, onDelete, onView }) {
   return (
-    <FadeIn className="overflow-x-auto w-full bg-base-100 rounded-[2.5rem] shadow-xl border border-base-300 mb-6">
-      <table className="table w-full border-separate border-spacing-y-2">
-        <thead className="bg-base-200/50">
-          <tr className="border-none text-base-content/70">
-            <th className="rounded-l-2xl">আইডি</th>
+    <FadeIn className=" overflow-x-auto w-full bg-base-100 shadow-xl border border-base-100 ">
+      <table className="table w-full rounded-xl shadow-md shadow-primary overflow-hidden  ">
+        <thead className="bg-primary/50 rounded-xl ">
+          <tr className="border-b-2 border-secondary/50 text-primary">
+            <th className="">আইডি</th>
             <th>গ্রাহকের তথ্য</th>
             <th>অভিভাবক</th>
             <th>ঠিকানা ও মোবাইল</th>
             <th>এনআইডি/জন্ম তারিখ</th>
-            <th className="text-center rounded-r-2xl">অ্যাকশন</th>
+            <th className="text-center">অ্যাকশন</th>
           </tr>
         </thead>
         <tbody>
           {customers.map((customer) => (
             <tr
               key={customer._id}
-              className="hover:bg-primary/5 transition-all group"
+              className="hover:bg-primary/15 
+    transition-all 
+    duration-500 
+    ease-linear
+    group 
+    hover:shadow-inner 
+    hover:translate-x-1 border-b-2 border-primary/15 "
             >
               <td className="font-black text-primary">#{customer.cust_id}</td>
               <td>
@@ -59,7 +65,7 @@ export default function CustomerTable({ customers, onEdit, onDelete, onView }) {
                 <p className="opacity-60">মাতা: {customer.motherName}</p>
               </td>
               <td>
-                <div className="text-xs font-medium truncate max-w-[150px] mb-1">
+                <div className="text-xs font-medium truncate max-w-20 mb-1">
                   {customer.address}
                 </div>
                 <div className="badge badge-sm badge-secondary font-bold px-2">
