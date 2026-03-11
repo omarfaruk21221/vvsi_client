@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
@@ -22,11 +22,12 @@ import RegisterBanner from "@/component/Bannars/RegisterBanner";
 import { RevealText } from "@/component/Animations/RevealText";
 import { FadeIn } from "@/component/Animations/FadeIn";
 import Swal from "sweetalert2";
+import { useImageUpload } from "@/lib/useImageUpload";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  // const [maxUserId, setMaxUserId] = useState();
+  const { uploadToImgBB } = useImageUpload();
 
   const {
     register,
@@ -42,73 +43,58 @@ export default function RegisterPage() {
     },
   });
 
-  // ইমেজ আপলোড করার জন্য আলাদা ক্লিন ফাংশন
-  const uploadToImgBB = async (fileList) => {
-    if (!fileList || !fileList[0]) return "";
-
-    try {
-      const imgFormData = new FormData();
-      imgFormData.append("image", fileList[0]);
-
-      const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
-      if (!apiKey) throw new Error("API Key পাওয়া যায়নি");
-
-      const response = await fetch(
-        `https://api.imgbb.com/1/upload?key=${apiKey}`,
-        {
-          method: "POST",
-          body: imgFormData,
-        },
-      );
-
-      const result = await response.json();
-      if (result.success) return result.data.url;
-      throw new Error(result.error?.message || "ইমেজ আপলোড ব্যর্থ হয়েছে");
-    } catch (error) {
-      console.error("ImgBB Upload Error:", error);
-      throw error;
-    }
-  };
-
-  //  get max user id
+  // ম্যাক্স ইউজার আইডি গেট করার ফাংশন
   const getMaxId = async () => {
     try {
       const res = await axiosInstance.get("/max-user-id");
-      const NextId = parseInt(res.data);
-      const MaxId = NextId + 1;
-      setValue("user_id", MaxId);
-      console.log("user_id", MaxId);
-    } catch {
+      const nextId = parseInt(res.data) + 1;
+      setValue("user_id", nextId);
+    } catch (err) {
       console.error("ID Fetch Error:", err);
     }
   };
+
   useEffect(() => {
     getMaxId();
-  }, []);
+  }, [setValue]);
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
+      // ইমেজ আপলোড করার সময় প্রমিজ ডট অল ব্যবহার করা হয়েছে যেন প্যারালাল আপলোড হয়
       const [profileUrl, nidFrontUrl, nidBackUrl] = await Promise.all([
         uploadToImgBB(data.image),
         uploadToImgBB(data.nidPdfFornt),
         uploadToImgBB(data.nidPdfBackpart),
       ]);
 
+      // নতুন ব্যাকএন্ডের মঙ্গুজ স্কিমা অনুযায়ী ডেটা গুছানো (Nested Structure)
       const finalPayload = {
-        ...data,
+        user_id: Number(data.user_id),
+        name: data.name,
+        mobile: data.mobile,
+        password: data.password,
+        role: data.role || "সাধারণ",
         image: profileUrl,
-        nidPdfFornt: nidFrontUrl,
-        nidPdfBackpart: nidBackUrl,
+        details: {
+          fatherName: data.fatherName,
+          motherName: data.motherName,
+          dob: data.dob,
+          address: data.address,
+          nidNumber: data.nidNumber,
+          nidPdfFornt: nidFrontUrl,
+          nidPdfBackpart: nidBackUrl,
+        },
       };
-      console.log("register data", finalPayload);
+      console.log("User Register Info:", finalPayload);
+
       const res = await axiosInstance.post("/register", finalPayload);
 
       if (res.status === 201 || res.status === 200) {
         Swal.fire({
           icon: "success",
           title: "নিবন্ধন সফল!",
-          text: "আপনার অ্যাকাউন্টটি সফলভাবে তৈরি হয়েছে।",
+          text: "আপনার অ্যাকাউন্টটি সফলভাবে তৈরি হয়েছে।",
           confirmButtonColor: "#3085d6",
           confirmButtonText: "ঠিক আছে",
         }).then(() => {
@@ -122,7 +108,7 @@ export default function RegisterPage() {
         text:
           err.response?.data?.message ||
           err.message ||
-          "রেজিস্ট্রেশন ব্যর্থ হয়েছে",
+          "রেজিস্ট্রেশন ব্যর্থ হয়েছে",
       });
     } finally {
       setLoading(false);
@@ -137,12 +123,10 @@ export default function RegisterPage() {
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-warning rounded-full blur-[60px] animate-pulse" />
 
       <div className="w-11/12 md:w-10/12 grid grid-cols-1 md:grid-cols-12 justify-between items-stretch rounded-4xl bg-base-100/40 backdrop-blur-md shadow-2xl z-10 overflow-hidden border border-white/20">
-        {/* Left Side: Banner */}
         <aside className="hidden md:block md:col-span-4 bg-primary/10">
           <RegisterBanner />
         </aside>
 
-        {/* Right Side: Form */}
         <aside className="col-span-1 md:col-span-8 p-6 lg:p-10 overflow-y-auto max-h-[90vh] custom-scrollbar">
           <div className="mb-10">
             <RevealText className="text-2xl lg:text-4xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-accent to-primary bg-clip-text text-transparent py-2">
@@ -154,9 +138,7 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
-            {/* Section: Personal Info */}
             <section className="space-y-6">
-              {/* ইউনিক আইডি ডিসপ্লে কার্ড (মাউস ক্লিক বা কার্সার যাবে না) */}
               <div className="absolute top-6 right-6 bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 flex items-center gap-3 select-none pointer-events-none">
                 <Fingerprint className="text-primary animate-pulse" size={24} />
                 <div>
@@ -171,6 +153,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
+
               <header className="flex items-center gap-2 bg-accent/20 rounded-full py-2 px-4 w-fit">
                 <div className="w-2 h-2 rounded-full bg-accent animate-ping" />
                 <h3 className="font-bold text-sm uppercase tracking-widest text-accent-content">
@@ -180,9 +163,8 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <SelectField
-                  defaultValue="সাধারণ"
                   label="ক্যাটাগরি"
-                  name="category"
+                  name="role"
                   icon={<Briefcase size={18} />}
                   options={[
                     { label: "সাধারণ", value: "সাধারণ" },
@@ -223,7 +205,7 @@ export default function RegisterPage() {
                   placeholder="আপনার এনআইডি নম্বর"
                   register={register}
                   errors={errors}
-                  required="NID নম্বর প্রয়োজন"
+                  required="NID নম্বর প্রয়োজন"
                 />
                 <InputField
                   label="জন্ম তারিখ"
@@ -236,12 +218,11 @@ export default function RegisterPage() {
               </div>
             </section>
 
-            {/* Section: Security */}
             <section className="space-y-6">
               <header className="flex items-center gap-2 bg-primary/20 rounded-full py-2 px-4 w-fit">
                 <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
                 <h3 className="font-bold text-sm uppercase tracking-widest text-primary-content">
-                  পরিচয় ও নিরাপত্তা
+                  পরিচয় ও নিরাপত্তা
                 </h3>
               </header>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -269,13 +250,12 @@ export default function RegisterPage() {
                 label="পূর্ণ ঠিকানা"
                 name="address"
                 icon={<MapPin size={18} />}
-                placeholder="গ্রাম, ইউনিয়ন, জেলা"
+                placeholder="গ্রাম, ইউনিয়ন, জেলা"
                 register={register}
                 errors={errors}
               />
             </section>
 
-            {/* Section: Documents */}
             <section className="space-y-6">
               <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary/70 flex items-center gap-3">
                 <span className="w-8 h-1 bg-primary/30" /> ছবি ও ডকুমেন্ট
@@ -318,7 +298,6 @@ export default function RegisterPage() {
               </div>
             </section>
 
-            {/* Footer Actions */}
             <footer className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-base-content/10">
               <p className="text-base-content/60 text-sm font-medium">
                 আগেই একাউন্ট আছে?{" "}
