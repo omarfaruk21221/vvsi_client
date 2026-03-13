@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
-import Link from "next/link";
 import {
   User,
   Phone,
@@ -36,19 +35,17 @@ export default function AddCutomerPage() {
   } = useForm({
     defaultValues: {
       category: "সাধারণ",
-      status: "Pending",
+      status: "",
       boxApplication: "না",
       cust_id: "",
     },
   });
 
-  // ব্যাকএন্ড থেকে Max ID নিয়ে এসে ১ যোগ করার ফাংশন
   const fetchAndSetId = async () => {
     try {
       const res = await axiosInstance.get("/max_cust_id");
       const maxId = parseInt(res.data) || 0;
-      const nextId = maxId + 1;
-      setValue("cust_id", nextId);
+      setValue("cust_id", maxId + 1);
     } catch (err) {
       console.error("ID Fetch Error:", err);
     }
@@ -72,8 +69,7 @@ export default function AddCutomerPage() {
         },
       );
       const result = await response.json();
-      if (result.success) return result.data.url;
-      return "";
+      return result.success ? result.data.url : "";
     } catch (error) {
       return "";
     }
@@ -83,56 +79,49 @@ export default function AddCutomerPage() {
     setLoading(true);
     Swal.fire({
       title: "তথ্য যাচাই করা হচ্ছে...",
-      html: "অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন, আমরা আপনার তথ্য এবং ছবিগুলো সুরক্ষিতভাবে আপলোড করছি।",
+      html: "অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করুন...",
       allowOutsideClick: false,
-      timerProgressBar: true,
       didOpen: () => {
         Swal.showLoading();
       },
     });
 
     try {
+      // ১. ছবিগুলো আপলোড করা
       const [profileUrl, nidFrontUrl, nidBackUrl] = await Promise.all([
         uploadToImgBB(data.image),
         uploadToImgBB(data.nidPdfFornt),
         uploadToImgBB(data.nidPdfBackpart),
       ]);
 
-      const customerInfo = {
-        ...data,
-        image: profileUrl,
-        nidPdfFornt: nidFrontUrl,
-        nidPdfBackpart: nidBackUrl,
-        createdAt: new Date().toISOString(),
+      // ২. আপনার ব্যাকএন্ড মডেল অনুযায়ী Nested Payload তৈরি
+      const payload = {
+        cust_id: Number(data.cust_id),
+        name: data.name,
+        mobile: data.mobile,
+        boxApplication: data.boxApplication,
+        role: data.category, // ক্যাটাগরিকে রোল হিসেবে পাঠানো হচ্ছে
+        status: "Active",
+        details: {
+          fatherName: data.fatherName || "",
+          motherName: data.motherName || "",
+          dob: data.dob || "",
+          address: data.address || "",
+          image: profileUrl,
+          nidNumber: data.nidNumber || "",
+          nidPdfFornt: nidFrontUrl,
+          nidPdfBackpart: nidBackUrl,
+        },
       };
 
-      const res = await axiosInstance.post("/add_customers", customerInfo);
+      const res = await axiosInstance.post("/add_customers", payload);
 
       if (res.status === 201 || res.status === 200) {
         Swal.fire({
           icon: "success",
-          title: `<span style="color: #10b981">নিবন্ধন সফল হয়েছে!</span>`, // গ্রিন কালার টাইটেল
-          html: `
-    <div style="text-align: center; font-family: inherit;">
-      <p style="font-size: 16px; margin-bottom: 10px;">
-        গ্রাহক <b>${data.name}</b> এর প্রোফাইল তৈরি হয়েছে।
-      </p>
-      <div style="background: #eff6ff; padding: 10px; border-radius: 12px; border: 1px dashed #3b82f6; display: inline-block;">
-        <span style="color: #1d4ed8; font-weight: bold; font-size: 18px;">
-          আইডি: #${data.cust_id}
-        </span>
-      </div>
-      <p style="font-size: 14px; color: #64748b; margin-top: 15px;">
-        সিস্টেমটি এখন পরবর্তী নিবন্ধনের জন্য প্রস্তুত।
-      </p>
-    </div>
-  `,
+          title: `<span style="color: #10b981">নিবন্ধন সফল হয়েছে!</span>`,
+          html: `গ্রাহক <b>${data.name}</b> এর আইডি: #${data.cust_id}`,
           confirmButtonColor: "#3b82f6",
-          confirmButtonText: "ঠিক আছে",
-          buttonsStyling: true,
-          customClass: {
-            confirmButton: "px-10 py-2 rounded-xl font-bold italic", // আপনার থিমের সাথে মিল রেখে
-          },
         }).then(() => {
           reset();
           fetchAndSetId();
@@ -141,8 +130,8 @@ export default function AddCutomerPage() {
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "ব্যর্থ হয়েছে",
-        text: err.response?.data?.message || "সার্ভারে সমস্যা হয়েছে",
+        title: "ব্যর্থ হয়েছে",
+        text: err.response?.data?.message || "সার্ভারে সমস্যা হয়েছে",
       });
     } finally {
       setLoading(false);
@@ -152,16 +141,14 @@ export default function AddCutomerPage() {
   return (
     <div className="min-h-[90vh] overflow-hidden bg-base-100">
       <AddCustomerBannar />
-
       <div className="z-10 overflow-hidden mb-10">
         <FadeIn>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="w-11/12 mx-auto space-y-10 grid grid-cols-1 md:grid-cols-12 justify-between items-start gap-10 "
+            className="w-11/12 mx-auto space-y-10 grid grid-cols-1 md:grid-cols-12 justify-between items-start gap-10"
           >
-            {/* Section: Personal Info (Left Side) */}
+            {/* Left Side: Form Fields */}
             <section className="min-h-[90vh] md:col-span-8 space-y-6 bg-primary/15 backdrop-blur-md rounded-4xl p-6 md:p-8 border border-primary/10 shadow-xl relative">
-              {/* ইউনিক আইডি ডিসপ্লে কার্ড (মাউস ক্লিক বা কার্সার যাবে না) */}
               <div className="absolute top-6 right-6 bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 flex items-center gap-3 select-none pointer-events-none">
                 <Fingerprint className="text-primary animate-pulse" size={24} />
                 <div>
@@ -181,9 +168,7 @@ export default function AddCutomerPage() {
                 <RevealText className="text-xl lg:text-2xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-secondary to-primary bg-clip-text text-transparent py-2">
                   নিবন্ধন ফরম
                 </RevealText>
-                <FadeIn>
-                  <div className="h-1 w-25 bg-primary mt-2 rounded-full" />
-                </FadeIn>
+                <div className="h-1 w-25 bg-primary mt-2 rounded-full" />
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-primary p-2">
@@ -272,6 +257,7 @@ export default function AddCutomerPage() {
                   />
                 </div>
               </div>
+
               <div className="pt-6">
                 <button
                   disabled={loading}
@@ -289,15 +275,13 @@ export default function AddCutomerPage() {
               </div>
             </section>
 
-            {/* Section: Documents & Submit (Right Side) */}
+            {/* Right Side: Uploads */}
             <section className="min-h-[90vh] space-y-4 md:col-span-4 p-6 bg-primary/15 md:p-8 rounded-4xl shadow-xl border border-primary/10">
               <header>
                 <RevealText className="text-xl lg:text-2xl font-black italic uppercase tracking-tighter bg-linear-to-r from-primary via-secondary to-primary bg-clip-text text-transparent py-2">
                   ছবি আপলোড করুন
                 </RevealText>
-                <FadeIn>
-                  <div className="h-1.5 w-20 bg-primary mt-2 rounded-full" />
-                </FadeIn>
+                <div className="h-1.5 w-20 bg-primary mt-2 rounded-full" />
               </header>
 
               <div className="space-y-4">
