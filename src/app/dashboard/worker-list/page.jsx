@@ -20,6 +20,7 @@ import UserViewModal from "@/component/Modals/CustomerViewModal";
 import UserEditModal from "@/component/Modals/CustomerEditModal";
 import WorkerTable from "./WorkerListTable";
 import WorkerGrid from "./WorkerListGrid";
+import SearchBar from "@/component/Global/SearchBar";
 
 export default function WorkerList() {
   const [workers, setWorkers] = useState([]);
@@ -102,58 +103,18 @@ export default function WorkerList() {
         />
 
         {/* কন্ট্রোল বার */}
-        <div className="sticky top-5 z-30 backdrop-blur-md">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-4 my-8 bg-base-100 p-5 rounded-[2.5rem] shadow-sm border border-base-300">
-            <div className="flex items-center gap-4 w-full lg:w-auto">
-              <div className="flex bg-base-200 p-1 rounded-2xl gap-1">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`btn btn-sm rounded-xl border-none ${viewMode === "list" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
-                >
-                  <List size={18} />
-                </button>
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`btn btn-sm rounded-xl border-none ${viewMode === "grid" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
-                >
-                  <Grid size={18} />
-                </button>
-              </div>
-              <span className="hidden md:block w-[1px] h-8 bg-base-300"></span>
-              <div className="relative w-full md:w-80">
-                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary opacity-60" />
-                <input
-                  type="search"
-                  placeholder="নাম বা মোবাইল..."
-                  className="input input-bordered w-full pl-12 bg-base-200 border-none rounded-2xl font-medium focus:ring-2 ring-primary/20 transition-all shadow-inner"
-                  value={searchText}
-                  onChange={(e) => {
-                    setSearchText(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 w-full lg:w-auto">
-              <button
-                onClick={() =>
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                }
-                className="btn btn-ghost bg-base-100 hover:bg-base-200 gap-2 rounded-2xl font-bold px-6 shadow-sm flex-1 md:flex-none"
-              >
-                <ArrowUpDown size={16} />{" "}
-                {sortOrder === "asc" ? "পুরাতন" : "নতুন"}
-              </button>
-              <Link href="/dashboard/add-user" className="flex-1 md:flex-none">
-                <AnimatedButton className="btn btn-primary gap-2 rounded-2xl px-6 shadow-lg shadow-primary/20 border-none w-full">
-                  <UserPlusIcon className="w-5 h-5" /> নতুন কর্মচারী
-                </AnimatedButton>
-              </Link>
-            </div>
-          </div>
-        </div>
-
+        <SearchBar
+          searchText={searchText}
+          setSearchText={setSearchText}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          addLink="/dashboard/worker-application-list"
+          addText="আবেদনের তালিকা"
+          placeholder="নাম, মোবাইল বা আইডি দিয়ে খুঁজুন..."
+          onSearchChange={() => setCurrentPage(1)}
+        />
         {/* ডাটা রেন্ডারিং */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24">

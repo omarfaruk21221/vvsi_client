@@ -19,6 +19,7 @@ import CustomerEditModal from "@/component/Modals/CustomerEditModal";
 import CustomerListBanner from "@/component/Bannars/CustomerListBanner";
 import CustomerTable from "@/app/dashboard/customer-list/CustomerTable";
 import CustomerGrid from "./CustomerGrid";
+import SearchBar from "@/component/Global/SearchBar";
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState([]);
@@ -131,62 +132,26 @@ export default function CustomerList() {
         `}</style>
 
         <CustomerListBanner
-          totalCustomers={totalCount} // ব্যাকেন্ড থেকে আসা মোট সংখ্যা
+          totalCustomers={totalCount}
           filteredCount={customers.length}
         />
 
-        <div className="sticky top-5 z-30 backdrop-blur-md">
-          <FadeIn>
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 my-8  bg-primary/30 p-5 rounded-4xl shadow-sm border border-base-300  top-0">
-              <div className="flex items-center gap-4">
-                <div className="flex bg-base-300 p-1 rounded-2xl gap-1">
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`btn btn-sm rounded-xl border-none ${viewMode === "list" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
-                  >
-                    <List size={18} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`btn btn-sm rounded-xl border-none ${viewMode === "grid" ? "btn-primary shadow-md" : "btn-ghost text-base-content/50"}`}
-                  >
-                    <Grid size={18} />
-                  </button>
-                </div>
-                <span className="w-1 h-9 bg-primary/50 rounded-2xl"></span>
-                <div className="relative w-full md:w-96 border-2 border-primary/30 rounded-2xl">
-                  <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                  <input
-                    type="search"
-                    placeholder="নাম, মোবাইল বা আইডি দিয়ে খুঁজুন..."
-                    className="input input-bordered w-full pl-12 bg-base-200/50 border-none rounded-2xl font-medium focus:ring-2 ring-primary/20 transition-all"
-                    value={searchText}
-                    onChange={(e) => {
-                      setSearchText(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 w-full md:w-auto">
-                <button
-                  onClick={() =>
-                    setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                  }
-                  className="btn btn-ghost bg-base-200 hover:bg-base-300 gap-2 rounded-2xl font-bold px-6"
-                >
-                  <ArrowUpDown size={16} />
-                  {sortOrder === "asc" ? "পুরাতন আগে" : "নতুন আগে"}
-                </button>
-                <Link href="/dashboard/add-customer">
-                  <AnimatedButton className="btn btn-primary gap-2 rounded-2xl px-6 shadow-lg shadow-primary/20 border-none">
-                    <UserPlusIcon className="w-5 h-5" /> নতুন গ্রাহক
-                  </AnimatedButton>
-                </Link>
-              </div>
-            </div>
-          </FadeIn>
-        </div>
+        {/* Contral bar  */}
+
+        <FadeIn>
+          <SearchBar
+            searchText={searchText}
+            setSearchText={setSearchText}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            addLink="/dashboard/add-customer"
+            addText="নতুন গ্রাহক "
+            placeholder="নাম, মোবাইল বা আইডি দিয়ে খুঁজুন..."
+            onSearchChange={() => setCurrentPage(1)}
+          />
+        </FadeIn>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
