@@ -50,7 +50,7 @@ export default function DashLinks() {
     {
       name: "কর্মচারীদের আবেদন ",
       icon: <ShieldUser size={20} />,
-      link: "/dashboard/worker-application",
+      link: "/dashboard/worker-application-list",
     },
     {
       name: " কর্মচারীদের তালিকা",

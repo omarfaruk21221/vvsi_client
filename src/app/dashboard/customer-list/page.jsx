@@ -17,8 +17,8 @@ import Swal from "sweetalert2";
 import CustomerViewModal from "@/component/Modals/CustomerViewModal";
 import CustomerEditModal from "@/component/Modals/CustomerEditModal";
 import CustomerListBanner from "@/component/Bannars/CustomerListBanner";
-import CustomerGrid from "@/component/Dashboard/CustomerGrid";
-import CustomerTable from "@/component/Dashboard/CustomerTable";
+import CustomerTable from "@/app/dashboard/customer-list/CustomerTable";
+import CustomerGrid from "./CustomerGrid";
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState([]);

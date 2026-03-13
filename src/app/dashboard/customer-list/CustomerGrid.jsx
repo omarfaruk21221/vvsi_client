@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { Eye, Edit, Trash2, User2Icon, Phone, MapPin } from "lucide-react";
-import { FadeIn } from "../Animations/FadeIn";
+import { FadeIn } from "@/component/Animations/FadeIn";
 
 export default function CustomerGrid({ customers, onEdit, onDelete, onView }) {
   return (
